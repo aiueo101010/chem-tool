@@ -1,0 +1,680 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><title>化学実験 第3実験室 図表メーカー</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* layout: one working column — tabs per experiment, inputs left / live preview right, export bar at the bottom */
+:root{
+ --paper:#F6F8F7; --card:#FFFFFF; --ink:#1E2B2C; --muted:#5E6F70; --line:#D5DFDD;
+ --accent:#2F5D62; --accent-ink:#FFFFFF; --soft:#E6EFED; --warn:#9A5B12; --warn-bg:#FBF1E2; --bad:#A63A2E;
+ --c1:#2F5D62; --c2:#C0392B; --c3:#D9822B; --c4:#3A6EA5; --grid:#E3EAE8;
+ --f-body:"BIZ UDPGothic","Hiragino Sans","Yu Gothic UI","Meiryo",sans-serif;
+ --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+ --paper:#141B1C; --card:#1B2425; --ink:#E4ECEA; --muted:#9DB0AE; --line:#2E3B3C;
+ --accent:#7FB8B0; --accent-ink:#0F1718; --soft:#22302F; --warn:#E3B66E; --warn-bg:#2E2618; --bad:#F08A7D;
+ --c1:#7FB8B0; --c2:#F08A7D; --c3:#E8A65C; --c4:#86AEDD; --grid:#263233; color-scheme:dark}}
+:root[data-theme="dark"]{
+ --paper:#141B1C; --card:#1B2425; --ink:#E4ECEA; --muted:#9DB0AE; --line:#2E3B3C;
+ --accent:#7FB8B0; --accent-ink:#0F1718; --soft:#22302F; --warn:#E3B66E; --warn-bg:#2E2618; --bad:#F08A7D;
+ --c1:#7FB8B0; --c2:#F08A7D; --c3:#E8A65C; --c4:#86AEDD; --grid:#263233; color-scheme:dark}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.65}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 56px;display:grid;gap:22px}
+header{display:grid;gap:6px}
+h1{font-size:clamp(22px,3.2vw,30px);margin:0;letter-spacing:.02em;text-wrap:balance}
+h1 small{font-family:var(--f-mono);font-size:.5em;font-weight:500;color:var(--muted);margin-left:.6em;letter-spacing:.06em}
+.lead{margin:0;color:var(--muted);max-width:68ch}
+nav{display:flex;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+nav a{padding:10px 14px;text-decoration:none;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-1px;font-weight:700}
+nav a[aria-current="page"]{color:var(--ink);border-color:var(--accent)}
+nav a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}
+.panel{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:22px;align-items:start}
+@media (max-width:860px){.panel{grid-template-columns:1fr}}
+.col{display:grid;gap:18px;min-width:0}
+section.box{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;display:grid;gap:12px;min-width:0}
+h2{font-size:16px;margin:0;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+h2 .tag{font-family:var(--f-mono);font-size:11px;font-weight:500;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+.hint{font-size:13px;color:var(--muted);margin:0}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px 14px}
+label.f{display:grid;gap:3px;font-size:13px;color:var(--muted)}
+input[type=number],input[type=text],select{font:inherit;font-family:var(--f-mono);font-size:14px;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%;min-width:0;box-sizing:border-box}
+input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:center;font-size:13px;white-space:nowrap}
+th{background:var(--soft);font-weight:700;color:var(--ink)}
+tr:last-child td{border-bottom:none}
+td input[type=number],td input[type=text]{width:84px}
+td.l,th.l{text-align:left}
+.mono{font-family:var(--f-mono)}
+.btn{font:inherit;font-weight:700;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:8px 14px;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);padding:11px 18px;font-size:15px}
+.btn.small{padding:4px 10px;font-size:13px;font-weight:400}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.drop{border:1.5px dashed var(--line);border-radius:8px;padding:14px;text-align:center;color:var(--muted);font-size:13px;cursor:pointer;background:var(--paper)}
+.drop.over{border-color:var(--accent);color:var(--ink)}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:2px 10px;border-radius:999px;background:var(--warn-bg);color:var(--warn);font-weight:700}
+.chip.ok{background:var(--soft);color:var(--accent)}
+.results{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kv{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--paper);min-width:0}
+.kv b{display:block;font-family:var(--f-mono);font-size:15px;font-weight:500;color:var(--ink);overflow-wrap:anywhere}
+.kv span{font-size:12px;color:var(--muted)}
+canvas{width:100%;height:auto;display:block;background:var(--card);border:1px solid var(--line);border-radius:8px}
+.msg{font-size:13px;margin:0}
+@media (pointer:coarse),(max-width:600px){input[type=number],input[type=text],select{font-size:16px}}
+.msg.err{color:var(--bad)} .msg.warn{color:var(--warn)}
+.bar{position:sticky;bottom:0;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 16px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+.bar p{margin:0;font-size:13px;color:var(--muted);min-width:0;flex:1 1 260px}
+@media (max-width:600px){.bar{position:static}}
+footer{font-size:12px;color:var(--muted)}
+footer p{margin:4px 0;max-width:80ch}
+details.box>summary{cursor:pointer;font-weight:700;font-size:14px;color:var(--muted)}
+details.box[open]>summary{color:var(--ink)}
+.swatch{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:6px;border:1px solid rgba(0,0,0,.15)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media (prefers-reduced-motion:no-preference){.btn{transition:border-color .15s}}
+</style>
+
+<div class="wrap">
+<header>
+ <h1>化学実験 第3実験室 図表メーカー<small>LAB 3 · XLSX</small></h1>
+ <p class="lead">第3実験室のレポートで使う表とグラフを、測定値を入力するだけでExcelファイルにします。スペクトルは分光光度計のテキストファイル（JASCO形式）をそのまま読み込めます。Excelの「レポート用」シートには、レポートと同じ形式（三線表・図の書式）の表とグラフだけが入ります。計算の途中は「計算」シートにあります。</p>
+</header>
+
+<nav aria-label="実験の切り替え">
+ <a href="#colorimetry" data-tab="colorimetry">比色分析</a>
+ <a href="#btb" data-tab="btb">吸収スペクトルと平衡（BTB）</a>
+ <a href="#oscillation" data-tab="oscillation">振動反応</a>
+</nav>
+
+<!-- ============ 比色分析 ============ -->
+<div class="panel" id="p-colorimetry">
+ <div class="col">
+  <section class="box">
+   <h2>測定値<span class="tag">表1 · 表3 · 図2</span></h2>
+   <div class="grid2"><label class="f">硫酸銅五水和物の質量 / g<input id="c-mass" type="number" step="0.01"></label>
+    <label class="f">濃度未知試料溶液（No.7）の吸光度<input id="c-Aunk" type="number" step="0.001"></label></div>
+   <div class="tbl"><table><thead><tr><th>No.</th><th class="l">溶液</th><th>吸光度 A</th><th>検量線に使う</th></tr></thead><tbody id="c-rows"></tbody></table></div>
+   <p class="hint">外れた点のチェックを外すと、全点の検量線（図2）に加えて、その点を除いた検量線（図3）も作られます。</p>
+  </section>
+  <section class="box">
+   <h2>スペクトルのファイル<span class="tag">図1 · 表2</span></h2>
+   <div id="c-spec"></div>
+  </section>
+  <details class="box">
+   <summary>テキストの条件（変更が必要なときだけ）</summary>
+   <div class="grid2" style="margin-top:12px">
+    <label class="f">式量 / g mol⁻¹<input id="c-M" type="number" step="0.1"></label>
+    <label class="f">標準溶液の体積 / mL<input id="c-vstd" type="number" step="1"></label>
+    <label class="f">比色用メスフラスコ / mL<input id="c-vflask" type="number" step="1"></label>
+    <label class="f">未知試料の採取量 / mL<input id="c-vunk" type="number" step="0.01"></label>
+    <label class="f">セル長 / cm<input id="c-l" type="number" step="0.01"></label>
+    <label class="f">測定波長 / nm<input id="c-wl" type="number" step="1"></label>
+    <label class="f">No.1〜6 の標準溶液 / mL<input id="c-Vs" type="text"></label>
+    <label class="f">スペクトル用の標準溶液 / mL<input id="c-Vspec" type="number" step="0.01"></label>
+   </div>
+  </details>
+ </div>
+ <div class="col">
+  <section class="box">
+   <h2>結果</h2>
+   <div class="results" id="c-res"></div>
+   <canvas id="c-cv" width="640" height="420" aria-label="検量線のプレビュー"></canvas>
+   <canvas id="c-cv2" width="640" height="360" aria-label="スペクトルのプレビュー" hidden></canvas>
+   <p class="msg" id="c-msg"></p>
+  </section>
+ </div>
+</div>
+
+<!-- ============ BTB ============ -->
+<div class="panel" id="p-btb" hidden>
+ <div class="col">
+  <section class="box">
+   <h2>スペクトルのファイルとpH<span class="tag">図1–3 · 表1–4</span></h2>
+   <div class="drop" id="b-drop" tabindex="0" role="button">pHごとのファイルをまとめてドラッグ、またはクリックして選択<input id="b-file" type="file" multiple accept=".txt,.TXT,.csv" class="sr"></div>
+   <p class="hint">pHを入れると、グラフの線がその pH での BTB の色（黄 → 緑 → 青）になります。溶液の色を書くと表1に列が追加されます。</p>
+   <div class="tbl"><table><thead><tr><th class="l">ファイル</th><th>pH</th><th>溶液の色（任意）</th><th>計算に使う</th><th><button class="btn small" id="b-clear" type="button">全部削除</button></th></tr></thead><tbody id="b-rows"></tbody></table></div>
+  </section>
+  <details class="box">
+   <summary>テキストの条件（変更が必要なときだけ）</summary>
+   <div class="grid2" style="margin-top:12px">
+    <label class="f">BTB原液の濃度 / mmol L⁻¹<input id="b-stock" type="number" step="0.01"></label>
+    <label class="f">原液の採取量 / mL<input id="b-aliq" type="number" step="0.01"></label>
+    <label class="f">メスフラスコ / mL<input id="b-flask" type="number" step="0.1"></label>
+    <label class="f">セル長 / cm<input id="b-l" type="number" step="0.01"></label>
+    <label class="f">解析波長 λ1 / nm<input id="b-w1" type="number" step="1"></label>
+    <label class="f">解析波長 λ2 / nm<input id="b-w2" type="number" step="1"></label>
+    <label class="f">極大を探す範囲1 / nm<input id="b-r1" type="text"></label>
+    <label class="f">極大を探す範囲2 / nm<input id="b-r2" type="text"></label>
+    <label class="f">等吸収点を探す範囲 / nm<input id="b-ri" type="text"></label>
+   </div>
+  </details>
+ </div>
+ <div class="col">
+  <section class="box">
+   <h2>結果</h2>
+   <div class="results" id="b-res"></div>
+   <canvas id="b-cv" width="640" height="380" aria-label="スペクトルのプレビュー"></canvas>
+   <canvas id="b-cv2" width="640" height="380" aria-label="log値とpHの関係のプレビュー"></canvas>
+   <p class="msg" id="b-msg"></p>
+  </section>
+ </div>
+</div>
+
+<!-- ============ 振動反応 ============ -->
+<div class="panel" id="p-oscillation" hidden>
+ <div class="col">
+  <section class="box">
+   <h2>発色の時間<span class="tag">表1</span></h2>
+   <p class="hint">反応開始からの時間を入力します。<span class="mono">92</span>（秒）、<span class="mono">1'32"</span>、<span class="mono">1:32</span>、<span class="mono">1分32秒</span> のどれでも読み取れます。1回目が誘導期、振動期は「(最後 − 1回目) ÷ (回数 − 1)」で求めます。</p>
+   <div class="row"><label class="f" style="max-width:160px">発色の回数<input id="o-n" type="number" min="3" max="30" step="1"></label>
+    <button class="btn small" id="o-add" type="button">温度を追加</button></div>
+   <div class="tbl"><table><thead id="o-head"></thead><tbody id="o-rows"></tbody></table></div>
+  </section>
+ </div>
+ <div class="col">
+  <section class="box">
+   <h2>結果</h2>
+   <div class="results" id="o-res"></div>
+   <canvas id="o-cv" width="640" height="420" aria-label="アーレニウスプロットのプレビュー"></canvas>
+   <p class="msg" id="o-msg"></p>
+  </section>
+ </div>
+</div>
+
+<div class="bar">
+ <p id="bar-note"></p>
+ <div class="row"><button class="btn" id="clear" type="button">入力を全部消す</button><button class="btn" id="sample" type="button">サンプル値に戻す</button><button class="btn primary" id="export" type="button">Excelファイルを作成</button></div>
+</div>
+<p class="msg" id="save-msg" role="status"></p>
+
+</div>
+
+<script>
+/* ---- minimal XLSX writer with native scatter charts (no dependencies) ---- */
+const XL=(()=>{
+const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+/* --- zip (store, no compression) --- */
+const CRC=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}return t;})();
+const crc32=b=>{let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=CRC[(c^b[i])&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0;};
+function zip(files){const enc=new TextEncoder();const parts=[],cent=[];let off=0;
+ for(const [name,str] of files){const nb=enc.encode(name),db=enc.encode(str),c=crc32(db);
+  const h=new DataView(new ArrayBuffer(30));h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(8,0,true);h.setUint16(10,0,true);h.setUint16(12,0x21,true);h.setUint32(14,c,true);h.setUint32(18,db.length,true);h.setUint32(22,db.length,true);h.setUint16(26,nb.length,true);h.setUint16(28,0,true);
+  parts.push(new Uint8Array(h.buffer),nb,db);
+  const cd=new DataView(new ArrayBuffer(46));cd.setUint32(0,0x02014b50,true);cd.setUint16(4,20,true);cd.setUint16(6,20,true);cd.setUint16(8,0x0800,true);cd.setUint16(10,0,true);cd.setUint16(12,0,true);cd.setUint16(14,0x21,true);cd.setUint32(16,c,true);cd.setUint32(20,db.length,true);cd.setUint32(24,db.length,true);cd.setUint16(28,nb.length,true);cd.setUint32(42,off,true);
+  cent.push(new Uint8Array(cd.buffer),nb);off+=30+nb.length+db.length;}
+ const csize=cent.reduce((a,b)=>a+b.length,0);const e=new DataView(new ArrayBuffer(22));e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,csize,true);e.setUint32(16,off,true);
+ const all=[...parts,...cent,new Uint8Array(e.buffer)];const out=new Uint8Array(all.reduce((a,b)=>a+b.length,0));let p=0;for(const a of all){out.set(a,p);p+=a.length;}return out;}
+/* --- cell refs --- */
+const col=n=>{let s='';n++;while(n>0){const m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=Math.floor((n-1)/26);}return s;};
+const ref=(r,c)=>col(c)+(r+1);
+const aref=(sheet,r1,c1,r2,c2)=>`'${sheet}'!$${col(c1)}$${r1+1}`+(r2==null?'':`:$${col(c2)}$${r2+1}`);
+/* --- styles --- */
+const ST={def:0,head:1,n3:2,n6:3,sci:4,n2:5,n1:6,text:7,n4:8,title:9,note:10,bold:11,sub:12,n0:13,th:14,td:15,tdl:16,cap:17,tn:18,thl:19,tdlt:20};
+const stylesXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="6"><numFmt numFmtId="164" formatCode="0.000"/><numFmt numFmtId="165" formatCode="0.000000"/><numFmt numFmtId="166" formatCode="0.00E+00"/><numFmt numFmtId="167" formatCode="0.0"/><numFmt numFmtId="168" formatCode="0.0000"/><numFmt numFmtId="169" formatCode="0.00"/></numFmts><fonts count="7"><font><sz val="11"/><name val="Yu Gothic"/><family val="2"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Yu Gothic"/><family val="2"/></font><font><b/><sz val="13"/><name val="Yu Gothic"/><family val="2"/></font><font><sz val="9"/><color rgb="FF595959"/><name val="Yu Gothic"/><family val="2"/></font><font><b/><sz val="11"/><name val="Yu Gothic"/><family val="2"/></font><font><sz val="10.5"/><name val="游明朝"/><family val="1"/><charset val="128"/></font><font><sz val="9"/><name val="游明朝"/><family val="1"/><charset val="128"/></font></fonts><fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF2F5D62"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFEAF1EF"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="6"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FFBFBFBF"/></left><right style="thin"><color rgb="FFBFBFBF"/></right><top style="thin"><color rgb="FFBFBFBF"/></top><bottom style="thin"><color rgb="FFBFBFBF"/></bottom><diagonal/></border><border><left/><right/><top style="medium"><color rgb="FF000000"/></top><bottom style="thin"><color rgb="FF000000"/></bottom><diagonal/></border><border><left/><right/><top/><bottom style="medium"><color rgb="FF000000"/></bottom><diagonal/></border><border><left/><right/><top style="medium"><color rgb="FF000000"/></top><bottom style="medium"><color rgb="FF000000"/></bottom><diagonal/></border><border><left/><right/><top style="thin"><color rgb="FF000000"/></top><bottom style="medium"><color rgb="FF000000"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="21">
+<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
+<xf numFmtId="164" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center"/></xf>
+<xf numFmtId="165" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center"/></xf>
+<xf numFmtId="166" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center"/></xf>
+<xf numFmtId="169" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center"/></xf>
+<xf numFmtId="167" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center"/></xf>
+<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
+<xf numFmtId="168" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center"/></xf>
+<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>
+<xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1"/>
+<xf numFmtId="0" fontId="4" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf>
+<xf numFmtId="0" fontId="4" fillId="0" borderId="0" xfId="0" applyFont="1"/>
+<xf numFmtId="1" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center"/></xf>
+<xf numFmtId="0" fontId="5" fillId="0" borderId="2" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="5" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="5" fillId="0" borderId="3" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="5" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="6" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf>
+<xf numFmtId="0" fontId="5" fillId="0" borderId="4" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="5" fillId="0" borderId="5" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+/* --- rich text for chart titles: ^{} super, _{} sub, <i></i> italic --- */
+function richRuns(s,size=1000){const out=[];const re=/(\^\{[^}]*\}|_\{[^}]*\}|<i>.*?<\/i>)/g;let last=0,m;
+ const run=(t,attr='')=>`<a:r><a:rPr lang="ja-JP" sz="${size}" b="0"${attr}/><a:t>${esc(t)}</a:t></a:r>`;
+ while((m=re.exec(s))){if(m.index>last)out.push(run(s.slice(last,m.index)));const t=m[0];
+  if(t[0]==='^')out.push(run(t.slice(2,-1),' baseline="30000"'));else if(t[0]==='_')out.push(run(t.slice(2,-1),' baseline="-25000"'));else out.push(run(t.slice(3,-4),' i="1"'));last=re.lastIndex;}
+ if(last<s.length)out.push(run(s.slice(last)));return out.join('');}
+const plain=s=>String(s).replace(/\^\{([^}]*)\}/g,'$1').replace(/_\{([^}]*)\}/g,'$1').replace(/<\/?i>/g,'');
+const DASH={solid:'solid',dash:'dash',dot:'sysDot',sysdot:'sysDot',dashdot:'dashDot',longdash:'lgDash',sysdash:'sysDash'};const dsh=k=>DASH[k]||'solid';
+function numCache(vals){return `<c:numCache><c:formatCode>General</c:formatCode><c:ptCount val="${vals.length}"/>${vals.map((v,i)=>v==null||!isFinite(v)?'':`<c:pt idx="${i}"><c:v>${v}</c:v></c:pt>`).join('')}</c:numCache>`;}
+const GRAY='595959';
+function rich(m,sz=1000,color=GRAY){return richRuns(m,sz).replace(/<a:rPr([^>]*)\/>/g,`<a:rPr$1><a:solidFill><a:srgbClr val="${color}"/></a:solidFill><a:latin typeface="Yu Gothic"/><a:ea typeface="Yu Gothic"/></a:rPr>`);}
+function txPr(sz,color=GRAY){return `<c:txPr><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="${sz}" b="0"><a:solidFill><a:srgbClr val="${color}"/></a:solidFill><a:latin typeface="Yu Gothic"/><a:ea typeface="Yu Gothic"/></a:defRPr></a:pPr><a:endParaRPr lang="ja-JP"/></a:p></c:txPr>`;}
+function axisXml(id,cross,pos,o){const sc=`<c:scaling><c:orientation val="minMax"/>${o.max!=null?`<c:max val="${o.max}"/>`:''}${o.min!=null?`<c:min val="${o.min}"/>`:''}</c:scaling>`;
+ return `<c:valAx><c:axId val="${id}"/>${sc}<c:delete val="0"/><c:axPos val="${pos}"/>${o.grid===false?'':'<c:majorGridlines><c:spPr><a:ln w="9525" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:srgbClr val="D9D9D9"/></a:solidFill><a:round/></a:ln></c:spPr></c:majorGridlines>'}<c:title><c:tx><c:rich><a:bodyPr${pos==='l'?' rot="-5400000" vert="horz"':''}/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="1000" b="0"/></a:pPr>${rich(o.title||'')}</a:p></c:rich></c:tx><c:overlay val="0"/></c:title><c:numFmt formatCode="${esc(o.fmt||'General')}" sourceLinked="0"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/><c:tickLblPos val="low"/><c:spPr><a:noFill/><a:ln w="9525" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:srgbClr val="BFBFBF"/></a:solidFill><a:round/></a:ln></c:spPr>${txPr(900)}<c:crossAx val="${cross}"/><c:crosses val="autoZero"/><c:crossBetween val="midCat"/>${o.major?`<c:majorUnit val="${o.major}"/>`:''}</c:valAx>`;}
+function chartXml(ch){
+ const sers=ch.series.map((s,i)=>{const color=s.color||'4472C4';
+  const line=s.line?`<a:ln w="${s.width||28575}" cap="rnd"><a:solidFill><a:srgbClr val="${color}"/></a:solidFill><a:prstDash val="${dsh(s.dash)}"/><a:round/></a:ln>`:'<a:ln w="25400" cap="rnd"><a:noFill/><a:round/></a:ln>';
+  const mk=s.marker&&s.marker!=='none'?`<c:marker><c:symbol val="${s.marker}"/><c:size val="${s.msize||7}"/><c:spPr><a:solidFill><a:srgbClr val="${color}"/></a:solidFill><a:ln w="9525"><a:solidFill><a:srgbClr val="${color}"/></a:solidFill></a:ln></c:spPr></c:marker>`:'<c:marker><c:symbol val="none"/></c:marker>';
+  const dl=s.labels&&s.labels.length?`<c:dLbls>${s.labels.map(L=>`<c:dLbl><c:idx val="${L.idx}"/><c:layout><c:manualLayout><c:x val="${L.x}"/><c:y val="${L.y}"/></c:manualLayout></c:layout><c:tx><c:rich><a:bodyPr/><a:lstStyle/><a:p>${rich(L.text,1100,'000000')}</a:p></c:rich></c:tx><c:showLegendKey val="0"/><c:showVal val="1"/><c:showCatName val="0"/><c:showSerName val="0"/><c:showPercent val="0"/><c:showBubbleSize val="0"/></c:dLbl>`).join('')}<c:spPr><a:noFill/><a:ln><a:noFill/></a:ln></c:spPr><c:showLegendKey val="0"/><c:showVal val="0"/><c:showCatName val="0"/><c:showSerName val="0"/><c:showPercent val="0"/><c:showBubbleSize val="0"/><c:extLst><c:ext uri="{CE6537A1-D6FC-4f65-9D91-7224C49458BB}" xmlns:c15="http://schemas.microsoft.com/office/drawing/2012/chart"><c15:showLeaderLines val="1"/><c15:leaderLines><c:spPr><a:ln w="9525" cap="flat" cmpd="sng" algn="ctr"><a:solidFill><a:srgbClr val="000000"/></a:solidFill><a:round/></a:ln></c:spPr></c15:leaderLines></c:ext></c:extLst></c:dLbls>`:'';
+  let tl='';if(s.trend){const t=s.trend,tc=t.color||color;const lbl=t.label?`<c:trendlineLbl><c:layout><c:manualLayout><c:x val="${t.label.x}"/><c:y val="${t.label.y}"/></c:manualLayout></c:layout><c:tx><c:rich><a:bodyPr/><a:lstStyle/>${t.label.text.split('\n').map(ln=>`<a:p>${rich(ln,1000,'000000')}</a:p>`).join('')}</c:rich></c:tx><c:numFmt formatCode="General" sourceLinked="0"/><c:spPr><a:noFill/><a:ln><a:noFill/></a:ln></c:spPr></c:trendlineLbl>`:'';
+   tl=`<c:trendline><c:name>${esc(t.name||'近似直線')}</c:name><c:spPr><a:ln w="19050" cap="rnd"><a:solidFill><a:srgbClr val="${tc}"/></a:solidFill><a:prstDash val="${dsh(t.dash||'sysdot')}"/></a:ln></c:spPr><c:trendlineType val="linear"/>${t.forward?`<c:forward val="${t.forward}"/>`:''}${t.backward?`<c:backward val="${t.backward}"/>`:''}<c:dispRSqr val="0"/><c:dispEq val="${t.label?1:0}"/>${lbl}</c:trendline>`;}
+  return `<c:ser><c:idx val="${i}"/><c:order val="${i}"/><c:tx><c:v>${esc(plain(s.name))}</c:v></c:tx><c:spPr>${line}</c:spPr>${mk}${dl}${tl}<c:xVal><c:numRef><c:f>${esc(s.xRef)}</c:f>${numCache(s.x)}</c:numRef></c:xVal><c:yVal><c:numRef><c:f>${esc(s.yRef)}</c:f>${numCache(s.y)}</c:numRef></c:yVal><c:smooth val="0"/></c:ser>`;}).join('');
+ const lg=ch.legend||{x:0.12,y:0.04,w:0.45,h:0.22};
+ const legend=ch.legend===false?'':`<c:legend><c:legendPos val="r"/><c:layout><c:manualLayout><c:xMode val="edge"/><c:yMode val="edge"/><c:x val="${lg.x}"/><c:y val="${lg.y}"/><c:w val="${lg.w}"/><c:h val="${lg.h}"/></c:manualLayout></c:layout><c:overlay val="1"/><c:spPr><a:noFill/><a:ln><a:noFill/></a:ln></c:spPr>${txPr(1000)}</c:legend>`;
+ return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><c:roundedCorners val="0"/><c:chart><c:autoTitleDeleted val="1"/><c:plotArea><c:layout/><c:scatterChart><c:scatterStyle val="lineMarker"/><c:varyColors val="0"/>${sers}<c:axId val="500001"/><c:axId val="500002"/></c:scatterChart>${axisXml(500001,500002,'b',ch.x)}${axisXml(500002,500001,'l',ch.y)}<c:spPr><a:noFill/><a:ln><a:noFill/></a:ln></c:spPr></c:plotArea>${legend}<c:plotVisOnly val="1"/><c:dispBlanksAs val="gap"/></c:chart><c:spPr><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill><a:ln><a:noFill/></a:ln></c:spPr>${txPr(1000)}</c:chartSpace>`;}
+function cellRich(m,st){const mincho=st>=14;const f=mincho?(st===18?'<sz val="9"/><rFont val="游明朝"/><family val="1"/><charset val="128"/>':'<sz val="10.5"/><rFont val="游明朝"/><family val="1"/><charset val="128"/>'):'<sz val="11"/><rFont val="Yu Gothic"/><family val="2"/>';
+ const out=[];const re=/(\^\{[^}]*\}|_\{[^}]*\}|<i>.*?<\/i>)/g;let last=0,mm;const run=(t,a='')=>t?`<r><rPr>${a}${f}</rPr><t xml:space="preserve">${esc(t)}</t></r>`:'';
+ while((mm=re.exec(m))){out.push(run(m.slice(last,mm.index)));const t=mm[0];if(t[0]==='^')out.push(run(t.slice(2,-1),'<vertAlign val="superscript"/>'));else if(t[0]==='_')out.push(run(t.slice(2,-1),'<vertAlign val="subscript"/>'));else out.push(run(t.slice(3,-4),'<i/>'));last=re.lastIndex;}
+ out.push(run(m.slice(last)));return out.join('')||'<t></t>';}
+/* --- workbook --- */
+class Sheet{constructor(name){this.name=name;this.cells=new Map();this.widths={};this.charts=[];this.merges=[];this.heights={};}
+ merge(r1,c1,r2,c2){this.merges.push(ref(r1,c1)+':'+ref(r2,c2));return this;}
+ set(r,c,v,s,f){this.cells.set(r*1000+c,{r,c,v,s:s??(typeof v==='number'?ST.n3:ST.def),f});return this;}
+ row(r,c0,vals,s){vals.forEach((v,i)=>{if(v!==undefined&&v!==null)this.set(r,c0+i,v,Array.isArray(s)?s[i]:s);});return this;}
+ width(c,w){this.widths[c]=w;return this;}
+ chart(ch,r,c,r2,c2){this.charts.push({ch,r,c,r2,c2});return this;}
+ xml(drawingRid){const rows={};for(const x of this.cells.values()){(rows[x.r]=rows[x.r]||[]).push(x);}
+  const rk=Object.keys(rows).map(Number).sort((a,b)=>a-b);
+  const sd=rk.map(r=>`<row r="${r+1}"${this.heights[r]?` ht="${this.heights[r]}" customHeight="1"`:''}>${rows[r].sort((a,b)=>a.c-b.c).map(x=>{const R=ref(x.r,x.c);
+   if(x.f!=null){const isStr=typeof x.v==='string';return `<c r="${R}" s="${x.s}"${isStr?' t="str"':''}><f>${esc(x.f)}</f>${x.v==null||(typeof x.v==='number'&&!isFinite(x.v))?'':`<v>${esc(x.v)}</v>`}</c>`;}
+   if(typeof x.v==='number')return isFinite(x.v)?`<c r="${R}" s="${x.s}"><v>${x.v}</v></c>`:`<c r="${R}" s="${x.s}" t="e"><v>#N/A</v></c>`;
+   if(x.v&&typeof x.v==='object'&&x.v.r!=null)return `<c r="${R}" s="${x.s}" t="inlineStr"><is>${cellRich(x.v.r,x.s)}</is></c>`;
+   return `<c r="${R}" s="${x.s}" t="inlineStr"><is><t xml:space="preserve">${esc(x.v)}</t></is></c>`;}).join('')}</row>`).join('');
+  const cols=Object.keys(this.widths).length?`<cols>${Object.entries(this.widths).sort((a,b)=>a[0]-b[0]).map(([c,w])=>`<col min="${+c+1}" max="${+c+1}" width="${w}" customWidth="1"/>`).join('')}</cols>`:'';
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetViews><sheetView workbookViewId="0" showGridLines="${this.grid===false?0:1}"/></sheetViews><sheetFormatPr defaultRowHeight="18"/>${cols}<sheetData>${sd}</sheetData>${this.merges.length?`<mergeCells count="${this.merges.length}">${this.merges.map(m=>`<mergeCell ref="${m}"/>`).join('')}</mergeCells>`:''}${drawingRid?`<drawing r:id="${drawingRid}"/>`:''}</worksheet>`;}}
+function build(sheets){const files=[];let chartN=0,drawN=0;const ct=[],wbRels=[],wbSheets=[];
+ sheets.forEach((sh,i)=>{const n=i+1;let rid=null;
+  if(sh.charts.length){drawN++;rid='rId1';const anchors=[],drels=[];
+   sh.charts.forEach((c,j)=>{chartN++;files.push([`xl/charts/chart${chartN}.xml`,chartXml(c.ch)]);ct.push(`<Override PartName="/xl/charts/chart${chartN}.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml"/>`);
+    drels.push(`<Relationship Id="rId${j+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart" Target="../charts/chart${chartN}.xml"/>`);
+    anchors.push(`<xdr:twoCellAnchor><xdr:from><xdr:col>${c.c}</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>${c.r}</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:to><xdr:col>${c.c2}</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>${c.r2}</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to><xdr:graphicFrame macro=""><xdr:nvGraphicFramePr><xdr:cNvPr id="${j+2}" name="Chart ${j+1}"/><xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr><xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/chart"><c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" r:id="rId${j+1}"/></a:graphicData></a:graphic></xdr:graphicFrame><xdr:clientData/></xdr:twoCellAnchor>`);});
+   files.push([`xl/drawings/drawing${drawN}.xml`,`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">${anchors.join('')}</xdr:wsDr>`]);
+   files.push([`xl/drawings/_rels/drawing${drawN}.xml.rels`,`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${drels.join('')}</Relationships>`]);
+   files.push([`xl/worksheets/_rels/sheet${n}.xml.rels`,`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing${drawN}.xml"/></Relationships>`]);
+   ct.push(`<Override PartName="/xl/drawings/drawing${drawN}.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>`);}
+  files.push([`xl/worksheets/sheet${n}.xml`,sh.xml(rid)]);
+  ct.push(`<Override PartName="/xl/worksheets/sheet${n}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`);
+  wbRels.push(`<Relationship Id="rId${n}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${n}.xml"/>`);
+  wbSheets.push(`<sheet name="${esc(sh.name)}" sheetId="${n}" r:id="rId${n}"/>`);});
+ const ns=sheets.length;
+ wbRels.push(`<Relationship Id="rId${ns+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>`);
+ files.unshift(['[Content_Types].xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${ct.join('')}</Types>`],
+  ['_rels/.rels',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`],
+  ['xl/workbook.xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><bookViews><workbookView/></bookViews><sheets>${wbSheets.join('')}</sheets><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>`],
+  ['xl/_rels/workbook.xml.rels',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${wbRels.join('')}</Relationships>`],
+  ['xl/styles.xml',stylesXml]);
+ return zip(files);}
+return {Sheet,build,ST,col,ref,aref,plain};})();
+if(typeof module!=='undefined')module.exports=XL;
+
+</script>
+<script>
+/* ---- math + report-format workbook builders (tables/figures match the student's report) ---- */
+const LAB=(()=>{
+const {Sheet,ST,aref,col}=XL;
+const OF={blue:'4472C4',orange:'ED7D31',gray:'A5A5A5',red:'FF0000',gold:'FFC000'};
+const M='−';
+/* ---------- numbers & text ---------- */
+const fx=(v,d)=>isFinite(v)?(v<0?M:'')+Math.abs(v).toFixed(d):'—';
+function sig(v,n=3){if(!isFinite(v))return '—';if(v===0)return '0';const e=Math.floor(Math.log10(Math.abs(v)));const d=Math.max(0,n-1-e);return fx(+v.toPrecision(n),d);}
+function sci(v,n=3){if(!isFinite(v))return '—';const e=Math.floor(Math.log10(Math.abs(v)));let m=v/10**e;let mm=+m.toFixed(n-1);let ee=e;if(Math.abs(mm)>=10){mm/=10;ee++;}return `${fx(mm,n-1)} × 10^{${ee<0?M:''}${Math.abs(ee)}}`;}
+const roundSig=(v,n=3)=>isFinite(v)&&v!==0?+(v*(1+1e-12)).toPrecision(n):v;
+/* ---------- regression / spectra ---------- */
+function fit(x,y){const n=x.length;if(n<2)return null;const mx=x.reduce((a,b)=>a+b,0)/n,my=y.reduce((a,b)=>a+b,0)/n;let sxx=0,sxy=0,syy=0;for(let i=0;i<n;i++){sxx+=(x[i]-mx)**2;sxy+=(x[i]-mx)*(y[i]-my);syy+=(y[i]-my)**2;}
+ const a=sxy/sxx,b=my-a*mx;let sse=0;for(let i=0;i<n;i++)sse+=(y[i]-a*x[i]-b)**2;return {a,b,r2:syy?1-sse/syy:1,se:n>2?Math.sqrt(sse/(n-2)/sxx):NaN,n};}
+function parseSpectrum(text){const lines=text.split(/\r?\n/);let start=0;const xi=lines.findIndex(l=>/^\s*XYDATA/i.test(l));if(xi>=0)start=xi+1;const pts=[];
+ for(let i=start;i<lines.length;i++){const p=lines[i].trim().split(/[\t,; ]+/);if(p.length<2)continue;const a=parseFloat(p[0]),b=parseFloat(p[1]);if(isFinite(a)&&isFinite(b))pts.push([a,b]);}
+ pts.sort((p,q)=>p[0]-q[0]);return pts;}
+function steps(sp){const d=[];for(let i=1;i<sp.length;i++)d.push(Math.abs(sp[i][1]-sp[i-1][1]));const out=[];
+ for(let i=0;i<d.length;i++){const loc=[d[i-2],d[i-1],d[i+1],d[i+2]].filter(v=>v!=null);const lm=loc.length?Math.max(...loc):0;if(d[i]>0.004&&d[i]>3*lm)out.push((sp[i][0]+sp[i+1][0])/2);}return out;}
+function peak(sp,lo,hi){const st=steps(sp);const inr=sp.filter(p=>p[0]>=lo&&p[0]<=hi);if(!inr.length)return null;
+ const segs=[[]];inr.forEach((p,i)=>{if(i>0&&st.some(s=>s>inr[i-1][0]&&s<p[0]))segs.push([]);segs[segs.length-1].push(p);});
+ let best=null,gl=null;for(const sg of segs){let bi=0;sg.forEach((p,i)=>{if(p[1]>sg[bi][1])bi=i;});const q=sg[bi];if(!gl||q[1]>gl.p[1])gl={p:q};if(bi>0&&bi<sg.length-1&&(!best||q[1]>best[1]))best=q;}
+ if(best)return {w:best[0],a:best[1],edge:false,step:false};return {w:gl.p[0],a:gl.p[1],edge:true,step:segs.length>1};}
+const valAt=(sp,w)=>{let best=null,d=Infinity;for(const p of sp){const dd=Math.abs(p[0]-w);if(dd<d){d=dd;best=p;}}return best?best[1]:NaN;};
+function parseTime(s){s=String(s??'').trim().replace(/\s+/g,'');if(!s)return NaN;let m=s.match(/^(\d+)(?:['′’:]|分)(\d+(?:\.\d+)?)(?:["″”]|''|秒)?$/);if(m)return +m[1]*60+ +m[2];m=s.match(/^(\d+(?:\.\d+)?)(?:["″”s]|''|秒)?$/);if(m)return +m[1];return NaN;}
+/* BTB colour for a given pH (HL yellow -> green -> L- blue), pKa 7.1 */
+function btbColor(pH){const f=1/(1+10**(7.1-pH));const st=[[0,[214,170,0]],[0.5,[56,150,72]],[1,[33,64,160]]];let a=st[0],b=st[2];if(f<=0.5){a=st[0];b=st[1];}else{a=st[1];b=st[2];}const t=(f-a[0])/(b[0]-a[0]);
+ return a[1].map((v,i)=>Math.round(v+(b[1][i]-v)*t).toString(16).padStart(2,'0')).join('').toUpperCase();}
+function niceAxis(lo,hi,step){return {min:+(Math.floor(lo/step+1e-9)*step).toFixed(6),max:+(Math.ceil(hi/step-1e-9)*step).toFixed(6),major:step};}
+/* ---------- report-style table (three-line, 游明朝, centred) ---------- */
+function table(sh,r,c,caption,head,rows,note,spans){const sp=spans||head.map(()=>1);const W=sp.reduce((a,b)=>a+b,0);const pos=sp.map((_,j)=>c+sp.slice(0,j).reduce((a,b)=>a+b,0));
+ sh.set(r,c,{r:caption},ST.cap);if(W>1)sh.merge(r,c,r,c+W-1);
+ const put=(rr,j,v,st)=>{sh.set(rr,pos[j],{r:String(v)},st);for(let k=1;k<sp[j];k++)sh.set(rr,pos[j]+k,'',st);if(sp[j]>1)sh.merge(rr,pos[j],rr,pos[j]+sp[j]-1);};
+ head.forEach((h,j)=>put(r+1,j,h,ST.th));
+ rows.forEach((row,i)=>row.forEach((v,j)=>put(r+2+i,j,v,i===rows.length-1?ST.tdl:ST.td)));
+ let end=r+2+rows.length;if(note){sh.set(end,c,{r:note},ST.tn);end++;}return end+1;}
+function caption(sh,r,c,text,w){sh.set(r,c,{r:text},ST.cap);sh.merge(r,c,r,c+w-1);}
+const XFMT=d=>d<=0?'0':'0.'+'0'.repeat(d);
+
+/* ================== 比色分析 ================== */
+function colorimetry(p){
+ const rep=new Sheet('レポート用');rep.grid=false;const cs=new Sheet('計算');
+ [6,20,12,16,16,20,10,10].forEach((w,i)=>rep.width(i,w));
+ const n=p.mass/p.M,cstd=n/(p.vstd/1000),cstdR=roundSig(cstd,3);
+ const N=p.V.length;const rows=p.V.map((V,i)=>{const Cr=roundSig(cstd*V/p.vflask,3);return {no:i+1,V,C:Cr,A:p.A[i],use:p.use[i]};});
+ const fall=fit(rows.map(x=>x.C),rows.map(x=>x.A));const used=rows.filter(x=>x.use),ex=rows.filter(x=>!x.use);const fuse=ex.length&&used.length>=2?fit(used.map(x=>x.C),used.map(x=>x.A)):null;
+ const Cu=(p.Aunk-fall.b)/fall.a,orig=Cu*p.vflask/p.vunk;const Cu2=fuse?(p.Aunk-fuse.b)/fuse.a:NaN;
+ /* --- 計算 sheet (live formulas, chart data) --- */
+ cs.width(0,26).width(1,13);for(let c=2;c<=12;c++)cs.width(c,12);
+ cs.set(0,0,'計算用シート（グラフはこのシートの値を参照しています）',ST.sub);
+ const P=[['硫酸銅五水和物の質量 / g',p.mass,ST.n2,null],['式量 / g mol⁻¹',p.M,ST.n1,null],['物質量 / mol',n,ST.sci,'B2/B3'],['標準溶液の体積 / mL',p.vstd,ST.n0,null],['標準溶液の濃度 / mol L⁻¹',cstd,ST.sci,'B4/(B5/1000)'],['比色用メスフラスコ / mL',p.vflask,ST.n0,null],['未知試料の採取量 / mL',p.vunk,ST.n2,null],['セル長 / cm',p.l,ST.n2,null]];
+ P.forEach((r,i)=>{cs.set(1+i,0,r[0],ST.bold);cs.set(1+i,1,r[1],r[2],r[3]);});
+ const R0=11;cs.row(R0,0,['No.','V / mL','C / 10⁻³ mol L⁻¹','A','検量線（図3）に使用'],ST.head);
+ rows.forEach((x,i)=>{const r=R0+1+i;cs.set(r,0,x.no,ST.n0);cs.set(r,1,x.V,ST.n2);cs.set(r,3,x.A,ST.n3);cs.set(r,4,x.use?'○':'×',ST.text);});
+ const ru=R0+1+N;cs.set(ru,0,N+1,ST.n0);cs.set(ru,1,p.vunk,ST.n2);cs.set(ru,2,Cu*1000,ST.n3,`(D${ru+1}-INTERCEPT(D${R0+2}:D${R0+1+N},C${R0+2}:C${R0+1+N}))/SLOPE(D${R0+2}:D${R0+1+N},C${R0+2}:C${R0+1+N})`);cs.set(ru,3,p.Aunk,ST.n3);
+ const F0=ru+2;cs.row(F0,0,['','全点（図2）',ex.length?'除外後（図3）':''],ST.head);
+ const yr=`D${R0+2}:D${R0+1+N}`,xr=`C${R0+2}:C${R0+1+N}`;
+ const UB=F0+9;
+ const fr=[['傾き / L mol⁻¹（C を mol L⁻¹ にしたとき）',fall.a*1000,fuse?fuse.a*1000:null,`SLOPE(${yr},${xr})*1000`,`SLOPE(D${UB+2}:D${UB+1+used.length},C${UB+2}:C${UB+1+used.length})*1000`,ST.n2],
+  ['切片',fall.b,fuse?fuse.b:null,`INTERCEPT(${yr},${xr})`,`INTERCEPT(D${UB+2}:D${UB+1+used.length},C${UB+2}:C${UB+1+used.length})`,ST.n4],
+  ['決定係数 R²',fall.r2,fuse?fuse.r2:null,`RSQ(${yr},${xr})`,`RSQ(D${UB+2}:D${UB+1+used.length},C${UB+2}:C${UB+1+used.length})`,ST.n4],
+  ['未知試料（発色後）C / mol L⁻¹',Cu,fuse?Cu2:null,`(D${ru+1}-B${F0+3})/B${F0+2}`,`(D${ru+1}-C${F0+3})/C${F0+2}`,ST.sci],
+  ['もとの硫酸銅溶液の濃度 / mol L⁻¹',orig,fuse?Cu2*p.vflask/p.vunk:null,`B${F0+5}*B7/B8`,`C${F0+5}*B7/B8`,ST.n3]];
+ fr.forEach((r,i)=>{cs.set(F0+1+i,0,r[0],ST.bold);cs.set(F0+1+i,1,r[1],r[5],r[3]);if(r[2]!=null)cs.set(F0+1+i,2,r[2],r[5],r[4]);});
+ cs.row(UB,0,['','（図3用）使用した点','C / 10⁻³ mol L⁻¹','A'],ST.head);
+ used.forEach((x,i)=>{const r=UB+1+i,src=R0+1+(x.no-1)+1;cs.set(r,1,'No.'+x.no,ST.text);cs.set(r,2,x.C*1000,ST.n3,`C${src}`);cs.set(r,3,x.A,ST.n3,`D${src}`);});
+ const EB=UB+2+used.length;
+ if(ex.length){cs.row(EB,0,['','除外した点','C / 10⁻³ mol L⁻¹','A（実測値）','A（予想値）'],ST.head);ex.forEach((x,i)=>{const r=EB+1+i,src=R0+1+(x.no-1)+1;cs.set(r,1,'No.'+x.no,ST.text);cs.set(r,2,x.C*1000,ST.n3,`C${src}`);cs.set(r,3,x.A,ST.n3,`D${src}`);cs.set(r,4,fuse.a*x.C+fuse.b,ST.n3,`$C$${F0+2}*C${r+1}/1000+$C$${F0+3}`);});}
+ // simplify the per-row C formula to something readable
+ rows.forEach((x,i)=>{const r=R0+1+i;cs.set(r,2,x.C*1000,ST.n3,`ROUND($B$6*B${r+1}/$B$7*1000,${x.C*1000>=10?1:2})`);});
+ /* --- spectra on 計算 --- */
+ let SC=7,specInfo=[];const Cs=roundSig(cstd*p.Vspec/p.vflask,3);
+ (p.spectra||[]).forEach((s,k)=>{const d=s.data;const c=SC+k*3;cs.set(0,c,s.label,ST.bold);cs.row(1,c,['λ / nm','A'],ST.head);d.forEach((q,i)=>{cs.set(2+i,c,q[0],ST.n1);cs.set(2+i,c+1,q[1],ST.n6);});
+  const pk=peak(d,s.lo,s.hi);specInfo.push({s,c,d,pk,idx:pk?d.findIndex(q=>q[0]===pk.w):-1});});
+ /* --- レポート用 sheet --- */
+ let r=0;rep.set(r,0,'比色分析：レポート用の表と図（表・図をそのままコピーしてWordに貼り付けられます）',ST.sub);r+=2;
+ r=table(rep,r,0,'表1　硫酸銅標準溶液の調製結果',['項目','値'],[['硫酸銅五水和物の質量',`${fx(p.mass,2)} g`],['硫酸銅五水和物の物質量',`${sci(n)} mol`],['硫酸銅標準溶液の濃度',`${sci(cstd)} mol L^{${M}1}`]],null,[2,2]);
+ const figW=6,figH=19;
+ if(specInfo.length){
+  const ser=specInfo.map((x,k0)=>{const k=x.s.label.includes('ていない')?1:0;return {name:x.s.label,x:x.d.map(q=>q[0]),y:x.d.map(q=>q[1]),xRef:aref('計算',2,x.c,1+x.d.length,x.c),yRef:aref('計算',2,x.c+1,1+x.d.length,x.c+1),line:true,color:k?OF.orange:OF.blue,dash:k?'dash':'solid',marker:'none',
+   labels:x.idx>=0?[{idx:x.idx,text:`${Math.round(x.pk.w)} nm , ${x.pk.a.toFixed(3)}`,x:k?0.03:-0.16,y:k?-0.16:-0.06}]:[]};});
+  const allx=specInfo.flatMap(x=>x.d.map(q=>q[0])),ally=specInfo.flatMap(x=>x.d.map(q=>q[1]));const xa=niceAxis(Math.min(...allx),Math.max(...allx),100),ya=niceAxis(Math.min(0,...ally),Math.max(...ally)*1.1,0.1);if(ya.min>-0.1&&Math.min(...ally)<0)ya.min=-0.1;
+  rep.chart({series:ser,x:{title:'<i>λ</i> / nm',...xa},y:{title:'<i>A</i>',...ya,fmt:'0.0'},legend:{x:0.56,y:0.05,w:0.42,h:0.16}},r,0,r+figH,figW);r+=figH;
+  caption(rep,r,0,'図1　発色させた比色用標準溶液と発色させていない硫酸銅溶液の吸収スペクトル',figW);r+=2;
+  r=table(rep,r,0,'表2　各溶液の吸収極大波長, 極大での吸光度とモル吸光係数',['溶液','<i>λ</i>_{max} / nm','<i>A</i>',`<i>C</i> / mol L^{${M}1}`,`<i>ε</i> / L mol^{${M}1} cm^{${M}1}`],
+   specInfo.map(x=>[x.s.label.includes('ていない')?'無発色（硫酸銅）':'発色（テトラアンミン銅(II)）',x.pk?x.pk.w.toFixed(1):'—',x.pk?x.pk.a.toFixed(3):'—',sci(Cs),x.pk?(x.pk.a/(Cs*p.l)).toFixed(1):'—']),null,[2,1,1,1,1]);}
+ r=table(rep,r,0,`表3　各溶液の Cu^{2+}濃度と ${p.wl} nm における吸光度`,['No.','溶液の種類','<i>V</i> / mL',`<i>C</i> / 10^{${M}3} mol L^{${M}1}`,'<i>A</i>'],
+  [...rows.map((x,i)=>[String(x.no),i===0?'対照液':'比色用標準溶液',x.V.toFixed(2),sig(x.C*1000,3).replace(/^0$/,'0.00'),x.A.toFixed(3)]),[String(N+1),'濃度未知試料溶液',p.vunk.toFixed(2),sig(Cu*1000,3)+'*',p.Aunk.toFixed(3)]],'* 検量線（図2）から求めた値');
+ const allC=rows.map(x=>x.C*1000).concat([Cu*1000]);const xa2={min:0,max:Math.ceil(Math.max(...allC)/2+0.01)*2,major:2};const ya2={min:Math.min(fall.b,0)<0?-0.1:0,max:Math.ceil(Math.max(...rows.map(x=>x.A),p.Aunk)*10)/10+0.1,major:0.1};
+ const eq=(f)=>`<i>A</i> = ${sig(f.a,3)} L mol^{${M}1} × <i>C</i> ${f.b<0?M:'+'} ${Math.abs(f.b).toFixed(4)}`;
+ rep.chart({series:[{name:`比色用標準溶液・対照液（No.1-${N}）`,x:rows.map(x=>x.C*1000),y:rows.map(x=>x.A),xRef:aref('計算',R0+1,2,R0+N,2),yRef:aref('計算',R0+1,3,R0+N,3),marker:'circle',color:OF.blue,trend:{name:'近似直線',color:OF.blue,dash:'sysdot',label:{text:eq(fall),x:0.02,y:-0.04}}},
+  {name:`濃度未知試料溶液（No.${N+1}）`,x:[Cu*1000],y:[p.Aunk],xRef:aref('計算',ru,2,ru,2),yRef:aref('計算',ru,3,ru,3),marker:'circle',color:OF.orange}],
+  x:{title:`<i>C</i> / 10^{${M}3} mol L^{${M}1}`,...xa2},y:{title:'<i>A</i>',...ya2,fmt:'0.0'},legend:{x:0.1,y:0.04,w:0.48,h:0.22}},r,0,r+figH,figW);r+=figH;
+ caption(rep,r,0,`図2　${p.wl} nm における吸光度と Cu^{2+}濃度の関係（検量線）`,figW);r+=2;
+ if(ex.length&&fuse){const nm=ex.map(x=>x.no).join(', ');const un=used.map(x=>x.no);
+  const uname=un.length>=3&&un.every((v,i)=>!i||v===un[i-1]+1)?`${un[0]}-${un[un.length-1]}`:un.join(', ');
+  const ser=[{name:`比色用標準溶液・対照液（No.${uname}）`,x:used.map(x=>x.C*1000),y:used.map(x=>x.A),xRef:aref('計算',UB+1,2,UB+used.length,2),yRef:aref('計算',UB+1,3,UB+used.length,3),marker:'circle',color:OF.blue,trend:{name:`近似直線（No.${nm}を除く）`,color:OF.blue,dash:'sysdot',label:{text:eq(fuse),x:0.05,y:0.06}}},
+   {name:`No.${nm}（予想値）`,x:ex.map(x=>fuse.a*x.C+fuse.b).map((_,i)=>ex[i].C*1000),y:ex.map(x=>fuse.a*x.C+fuse.b),xRef:aref('計算',EB+1,2,EB+ex.length,2),yRef:aref('計算',EB+1,4,EB+ex.length,4),marker:'circle',color:OF.red},
+   {name:`No.${nm}（実測値）`,x:ex.map(x=>x.C*1000),y:ex.map(x=>x.A),xRef:aref('計算',EB+1,2,EB+ex.length,2),yRef:aref('計算',EB+1,3,EB+ex.length,3),marker:'circle',color:OF.gray}];
+  rep.chart({series:ser,x:{title:`<i>C</i> / 10^{${M}3} mol L^{${M}1}`,...xa2},y:{title:'<i>A</i>',min:Math.min(fuse.b,0)<0?-0.1:0,max:ya2.max,major:0.1,fmt:'0.0'},legend:{x:0.1,y:0.04,w:0.55,h:0.3}},r,0,r+figH,figW);r+=figH;
+  caption(rep,r,0,`図3　No.${nm} を除いた検量線`,figW);r+=2;}
+ return {sheets:[rep,cs],res:{n,cstd,fall,fuse,Cu,orig,Cu2,orig2:Cu2*p.vflask/p.vunk,rows,used,ex,spec:specInfo.map(x=>({label:x.s.label,pk:x.pk,eps:x.pk?x.pk.a/(Cs*p.l):NaN}))}};}
+
+/* ================== BTB ================== */
+function btb(p){
+ const S=[...p.samples].sort((a,b)=>a.pH-b.pH);const N=S.length;const C0=p.stock*1e-3*p.aliq/p.flask;const l=p.l;
+ const grid=[...new Set(S.flatMap(s=>s.data.map(q=>q[0])))].sort((a,b)=>a-b);const maps=S.map(s=>new Map(s.data.map(q=>[q[0],q[1]])));
+ const rep=new Sheet('レポート用');rep.grid=false;const cs=new Sheet('計算');
+ /* 計算 sheet: spectra grid */
+ cs.width(0,10);cs.set(0,0,'λ / nm',ST.head);cs.set(1,0,'ファイル',ST.head);S.forEach((s,k)=>{cs.set(0,k+1,'pH '+s.pH,ST.head);cs.set(1,k+1,s.file||'',ST.text);cs.width(k+1,11);});
+ grid.forEach((w,i)=>{cs.set(2+i,0,w,ST.n1);maps.forEach((m,k)=>{const v=m.get(w);if(v!=null)cs.set(2+i,k+1,v,ST.n6);});});
+ const G0=2,G1=1+grid.length;const EC=N+2;
+ cs.row(1,EC,['λ / nm','ε_HL / L mol⁻¹ cm⁻¹','ε_L / L mol⁻¹ cm⁻¹'],ST.head);cs.width(EC,10).width(EC+1,16).width(EC+2,16);
+ cs.set(0,EC,'C / mol L⁻¹',ST.bold);cs.set(0,EC+1,C0,ST.sci);cs.set(0,EC+2,'l / cm',ST.bold);cs.set(0,EC+3,l,ST.n2);
+ const eH=[],eL=[];grid.forEach((w,i)=>{const a=maps[0].get(w),b=maps[N-1].get(w);cs.set(2+i,EC,w,ST.n1);eH.push(a!=null?a/(C0*l):null);eL.push(b!=null?b/(C0*l):null);
+  if(a!=null)cs.set(2+i,EC+1,a/(C0*l),ST.n0,`${col(1)}${3+i}/($${col(EC+1)}$1*$${col(EC+3)}$1)`);if(b!=null)cs.set(2+i,EC+2,b/(C0*l),ST.n0,`${col(N)}${3+i}/($${col(EC+1)}$1*$${col(EC+3)}$1)`);});
+ const val=(k,w)=>{let best=null,d=Infinity;for(const g of grid){const dd=Math.abs(g-w);if(dd<d&&maps[k].get(g)!=null){d=dd;best=g;}}return best==null?NaN:maps[k].get(best);};
+ const rowsA=S.map((s,k)=>({pH:s.pH,color:s.color||'',a1:val(k,p.w1),a2:val(k,p.w2),use:s.use}));
+ const A1w1=rowsA[0].a1,A2w1=rowsA[N-1].a1,A1w2=rowsA[0].a2,A2w2=rowsA[N-1].a2;
+ const lg=(A,a1,a2)=>{const r=(A-a1)/(a2-A);return r>0&&isFinite(r)?Math.log10(r):NaN;};
+ rowsA.forEach((x,k)=>{if(k&&k<N-1){x.y1=lg(x.a1,A1w1,A2w1);x.y2=lg(x.a2,A1w2,A2w2);}});
+ const mid=rowsA.slice(1,-1);const u1=mid.filter(x=>x.use&&isFinite(x.y1)),u2=mid.filter(x=>x.use&&isFinite(x.y2));
+ const f1=fit(u1.map(x=>x.pH),u1.map(x=>x.y1)),f2=fit(u2.map(x=>x.pH),u2.map(x=>x.y2));
+ // fit data block on 計算
+ const FB=EC+5;cs.row(1,FB,[`pH（${p.w1} nm）`,`log（${p.w1} nm）`,`pH（${p.w2} nm）`,`log（${p.w2} nm）`],ST.head);for(let c=FB;c<FB+4;c++)cs.width(c,13);
+ u1.forEach((x,i)=>{cs.set(2+i,FB,x.pH,ST.n2);cs.set(2+i,FB+1,x.y1,ST.n3);});u2.forEach((x,i)=>{cs.set(2+i,FB+2,x.pH,ST.n2);cs.set(2+i,FB+3,x.y2,ST.n3);});
+ const fr=2+Math.max(u1.length,u2.length)+1;cs.row(fr,FB,['','傾き','切片','R²'],ST.head);
+ const rg=(c,n)=>`${col(c)}3:${col(c)}${2+n}`;
+ [[`${p.w1} nm`,f1,u1.length,FB],[`${p.w2} nm`,f2,u2.length,FB+2]].forEach(([lab,f,n,c],i)=>{cs.set(fr+1+i,FB,lab,ST.bold);if(!f)return;cs.set(fr+1+i,FB+1,f.a,ST.n3,`SLOPE(${rg(c+1,n)},${rg(c,n)})`);cs.set(fr+1+i,FB+2,f.b,ST.n3,`INTERCEPT(${rg(c+1,n)},${rg(c,n)})`);cs.set(fr+1+i,FB+3,f.r2,ST.n4,`RSQ(${rg(c+1,n)},${rg(c,n)})`);});
+ // peaks, isosbestic, steps, baseline (reference only)
+ const peaks=S.map(s=>({pH:s.pH,a:peak(s.data,p.r1[0],p.r1[1]),b:peak(s.data,p.r2[0],p.r2[1])}));
+ const isoS=S.map((s,k)=>k).filter(k=>S[k].iso);let iso=null;
+ if(isoS.length>=2)for(const w of grid){if(w<p.ri[0]||w>p.ri[1])continue;const vs=isoS.map(k=>maps[k].get(w));if(vs.some(v=>v==null))continue;const sp=Math.max(...vs)-Math.min(...vs);if(!iso||sp<iso.spread)iso={w,spread:sp,mean:vs.reduce((a,b)=>a+b,0)/vs.length,min:Math.min(...vs),max:Math.max(...vs)};}
+ const stp=[...new Set(S.flatMap(s=>steps(s.data)).map(w=>Math.round(w)))].sort((a,b)=>a-b);
+ const base=S.map((s,k)=>({pH:s.pH,a:maps[k].get(grid[grid.length-1])}));
+ const PR=fr+5;cs.set(PR,FB,'参考：吸収極大・等吸収点',ST.sub);cs.row(PR+1,FB,['pH',`極大（${p.r1[0]}–${p.r1[1]} nm）`,`極大（${p.r2[0]}–${p.r2[1]} nm）`],ST.head);
+ peaks.forEach((q,i)=>{cs.set(PR+2+i,FB,q.pH,ST.n2);cs.set(PR+2+i,FB+1,q.a?(q.a.edge?'明確な極大なし':`${q.a.w} nm（${q.a.a.toFixed(3)}）`):'—',ST.text);cs.set(PR+2+i,FB+2,q.b?(q.b.edge?'明確な極大なし':`${q.b.w} nm（${q.b.a.toFixed(3)}）`):'—',ST.text);});
+ const IR=PR+3+N;cs.set(IR,FB,'等吸収点',ST.bold);cs.set(IR,FB+1,iso?`${iso.w} nm（A = ${iso.min.toFixed(3)}〜${iso.max.toFixed(3)}）`:'—',ST.text);
+ cs.set(IR+1,FB,'段差（不連続）',ST.bold);cs.set(IR+1,FB+1,stp.length?stp.map(w=>'約'+w+' nm').join('、'):'なし',ST.text);
+ /* レポート用 */
+ [10,10,20,10,20,10,10,10].forEach((w,i)=>rep.width(i,w));
+ let r=0;rep.set(r,0,'分子の吸収スペクトルと溶液の平衡：レポート用の表と図',ST.sub);r+=2;const figW=8,figH=19;
+ const allA=S.flatMap(s=>s.data.map(q=>q[1]));const ya=niceAxis(Math.min(0,...allA),Math.max(...allA)*1.08,0.1);const xa=niceAxis(grid[0],grid[grid.length-1],50);
+ rep.chart({series:S.map((s,k)=>({name:'pH '+s.pH.toFixed(2),x:grid,y:grid.map(w=>maps[k].get(w)??null),xRef:aref('計算',G0,0,G1,0),yRef:aref('計算',G0,k+1,G1,k+1),line:true,width:22225,color:btbColor(s.pH),marker:'none'})),
+  x:{title:'<i>λ</i> / nm',...xa},y:{title:'<i>A</i>',...ya,fmt:'0.0'},legend:{x:0.74,y:0.04,w:0.22,h:0.065*N}},r,0,r+figH,figW);r+=figH;
+ caption(rep,r,0,'図1　pHの異なるBTB溶液の吸収スペクトル',figW);r+=2;
+ const hasColor=rowsA.some(x=>x.color);
+ r=table(rep,r,0,`表1　各pHにおける${hasColor?'溶液の色と':''} ${p.w1} nm, ${p.w2} nm における吸光度`,['pH',...(hasColor?['溶液の色']:[]),`<i>A</i>（${p.w1} nm）`,`<i>A</i>（${p.w2} nm）`],rowsA.map(x=>[x.pH.toFixed(2),...(hasColor?[x.color||'']:[]),x.a1.toFixed(3),x.a2.toFixed(3)]));
+ const eAll=[...eH,...eL].filter(v=>v!=null);const emax=Math.max(...eAll);const sc=emax>=1e4?1e4:1e3;const scE=Math.log10(sc);
+ rep.chart({series:[{name:`<i>ε</i>_{HL}（pH ${S[0].pH.toFixed(2)}）`,x:grid,y:eH,xRef:aref('計算',2,EC,G1,EC),yRef:aref('計算',2,EC+1,G1,EC+1),line:true,color:OF.orange,marker:'none'},{name:`<i>ε</i>_{L}（pH ${S[N-1].pH.toFixed(2)}）`,x:grid,y:eL,xRef:aref('計算',2,EC,G1,EC),yRef:aref('計算',2,EC+2,G1,EC+2),line:true,dash:'dash',color:OF.blue,marker:'none'}],
+  x:{title:'<i>λ</i> / nm',...xa},y:{title:`<i>ε</i> / L mol^{${M}1} cm^{${M}1}`,...niceAxis(Math.min(...eAll)<-0.1*emax?Math.min(...eAll):0,emax*1.08,sc),fmt:'0'},legend:{x:0.1,y:0.04,w:0.32,h:0.14}},r,0,r+figH,figW);r+=figH;
+ caption(rep,r,0,'図2　HL と L^{−} のモル吸光係数の波長依存性',figW);r+=2;
+ r=table(rep,r,0,`表2　${p.w1} nm と ${p.w2} nm における <i>A</i>_{1}, <i>A</i>_{2} とモル吸光係数`,['波長','<i>A</i>_{1}',`<i>ε</i>_{HL} / L mol^{${M}1} cm^{${M}1}`,'<i>A</i>_{2}',`<i>ε</i>_{L} / L mol^{${M}1} cm^{${M}1}`],
+  [[`${p.w1} nm`,A1w1.toFixed(3),sci(A1w1/(C0*l)),A2w1.toFixed(3),sci(A2w1/(C0*l))],[`${p.w2} nm`,A1w2.toFixed(3),sci(A1w2/(C0*l)),A2w2.toFixed(3),sci(A2w2/(C0*l))]]);
+ const LOG='log_{10}{(<i>A</i> − <i>A</i>_{1}) / (<i>A</i>_{2} − <i>A</i>)}';
+ r=table(rep,r,0,'表3　pH 7 付近の溶液における式(5.20)の左辺の値',['pH',`<i>A</i>（${p.w1} nm）`,`log 値（${p.w1} nm）`,`<i>A</i>（${p.w2} nm）`,`log 値（${p.w2} nm）`],
+  mid.map(x=>[x.pH.toFixed(2),x.a1.toFixed(3),isFinite(x.y1)?fx(x.y1,3):'解なし',x.a2.toFixed(3),isFinite(x.y2)?fx(x.y2,3):'解なし']),`log 値 = ${LOG}`);
+ const ser=[];const eqt=(f,w)=>`${w} nm: <i>y</i> = ${fx(f.a,3)}<i>x</i> ${f.b<0?M:'+'} ${Math.abs(f.b).toFixed(3)}\n<i>R</i>^{2} = ${f.r2.toFixed(3)}`;
+ if(f1)ser.push({name:`${p.w1} nm`,x:u1.map(x=>x.pH),y:u1.map(x=>x.y1),xRef:aref('計算',2,FB,1+u1.length,FB),yRef:aref('計算',2,FB+1,1+u1.length,FB+1),marker:'circle',color:OF.orange,trend:{name:`線形近似（${p.w1} nm）`,color:OF.orange,dash:'sysdot',label:{text:eqt(f1,p.w1),x:-0.3,y:-0.02}}});
+ if(f2)ser.push({name:`${p.w2} nm`,x:u2.map(x=>x.pH),y:u2.map(x=>x.y2),xRef:aref('計算',2,FB+2,1+u2.length,FB+2),yRef:aref('計算',2,FB+3,1+u2.length,FB+3),marker:'triangle',color:OF.blue,trend:{name:`線形近似（${p.w2} nm）`,color:OF.blue,dash:'dash',label:{text:eqt(f2,p.w2),x:0.05,y:0.1}}});
+ const pk1=f1?-f1.b/f1.a:NaN,pk2=f2?-f2.b/f2.a:NaN;const pks=[pk1,pk2].filter(isFinite);const pkm=pks.length?pks.reduce((a,b)=>a+b,0)/pks.length:NaN;
+ if(ser.length){const xs=[...u1,...u2].map(x=>x.pH),ys=[...u1.map(x=>x.y1),...u2.map(x=>x.y2)];
+  rep.chart({series:ser,x:{title:'pH',...niceAxis(Math.min(...xs)-0.2,Math.max(...xs)+0.2,0.25),fmt:'0.00'},y:{title:LOG,...niceAxis(Math.min(...ys)-0.2,Math.max(...ys)+0.2,0.25),fmt:'0.00'},legend:{x:0.1,y:0.04,w:0.36,h:0.26}},r,0,r+figH,figW);r+=figH;
+  caption(rep,r,0,'図3　BTB の吸光度と pH の関係',figW);r+=2;}
+ r=table(rep,r,0,'表4　近似直線の傾き・切片と求めた p<i>K</i>_{a}',['波長','傾き','切片','<i>R</i>^{2}','p<i>K</i>_{a}'],[[`${p.w1} nm`,f1?fx(f1.a,3):'—',f1?fx(f1.b,3):'—',f1?f1.r2.toFixed(3):'—',isFinite(pk1)?pk1.toFixed(2):'—'],[`${p.w2} nm`,f2?fx(f2.a,3):'—',f2?fx(f2.b,3):'—',f2?f2.r2.toFixed(3):'—',isFinite(pk2)?pk2.toFixed(2):'—']]);
+ return {sheets:[rep,cs],res:{C0,rowsA,f1,f2,pkm,u1,u2,peaks,iso,steps:stp,base,S,grid,maps}};}
+
+/* ================== 振動反応 ================== */
+function oscillation(p){const n=p.n;
+ const rep=new Sheet('レポート用');rep.grid=false;const cs=new Sheet('計算');
+ const rows=p.temps.map(t=>{const ts=t.times;const Pind=ts[0],Posc=(ts[n-1]-ts[0])/(n-1),T=t.t+273.15;return {t:t.t,T,Pind,Posc,ts,x:1000/T,yi:Math.log(1/Pind),yo:Math.log(1/Posc)};});
+ const fi=fit(rows.map(x=>x.x),rows.map(x=>x.yi)),fo=fit(rows.map(x=>x.x),rows.map(x=>x.yo));const R=8.314;
+ const Ea=f=>-f.a*1000*R/1000,dEa=f=>f.se*1000*R/1000;
+ /* 計算 */
+ cs.width(0,14);cs.set(0,0,'計算用シート',ST.sub);cs.row(1,0,['t / ℃','T / K','T⁻¹ / 10⁻³ K⁻¹',...Array.from({length:n},(_,i)=>`${i+1}回目 / s`),'Pind / s','Posc / s','ln(1/Pind)','ln(1/Posc)'],ST.head);
+ rows.forEach((x,k)=>{const r=2+k,Rr=r+1;cs.set(r,0,x.t,ST.n1);cs.set(r,1,x.T,ST.n2,`A${Rr}+273.15`);cs.set(r,2,x.x,ST.n4,`1000/B${Rr}`);x.ts.forEach((v,i)=>cs.set(r,3+i,v,ST.n0));
+  const c1=col(3),cn=col(2+n);cs.set(r,3+n,x.Pind,ST.n0,`${c1}${Rr}`);cs.set(r,4+n,x.Posc,ST.n2,`(${cn}${Rr}-${c1}${Rr})/${n-1}`);cs.set(r,5+n,x.yi,ST.n3,`LN(1/${col(3+n)}${Rr})`);cs.set(r,6+n,x.yo,ST.n3,`LN(1/${col(4+n)}${Rr})`);});
+ const e0=2,e1=1+rows.length,xr=`C${e0+1}:C${e1+1}`,yi=`${col(5+n)}${e0+1}:${col(5+n)}${e1+1}`,yo=`${col(6+n)}${e0+1}:${col(6+n)}${e1+1}`;const F0=e1+2;
+ cs.row(F0,0,['','誘導期','振動期'],ST.head);
+ [['傾き / 10³ K',fi.a,fo.a,y=>`SLOPE(${y},${xr})`,ST.n3],['切片',fi.b,fo.b,y=>`INTERCEPT(${y},${xr})`,ST.n3],['R²',fi.r2,fo.r2,y=>`RSQ(${y},${xr})`,ST.n4],['Ea / kJ mol⁻¹',Ea(fi),Ea(fo),(y,c)=>`-${c}${F0+2}*${R}`,ST.n1],['Ea の標準誤差 / kJ mol⁻¹',dEa(fi),dEa(fo),y=>`INDEX(LINEST(${y},${xr},TRUE,TRUE),2,1)*${R}`,ST.n1]]
+  .forEach((L,i)=>{cs.set(F0+1+i,0,L[0],ST.bold);cs.set(F0+1+i,1,L[1],L[4],L[3](yi,'B'));cs.set(F0+1+i,2,L[2],L[4],L[3](yo,'C'));});
+ /* レポート用 */
+ rep.width(0,22).width(1,12);for(let c=2;c<2+n;c++)rep.width(c,7);
+ let r=0;rep.set(r,0,'化学的振動反応：レポート用の表と図',ST.sub);r+=2;
+ const t1=[];rows.forEach(x=>{t1.push([`${x.t} ℃`,'時間 / s',...x.ts.map(v=>String(Math.round(v)))]);t1.push(['','周期 / s',...x.ts.map((v,i)=>String(Math.round(i?v-x.ts[i-1]:v)))]);});
+ const T1=r+2;r=table(rep,r,0,'表1　発色の回数と時間（時間は反応開始からの経過時間）',['温度','項目',...Array.from({length:n},(_,i)=>String(i+1))],t1,'※ 1回目の周期は誘導期 <i>P</i>_{ind} に等しい。');rows.forEach((_,k)=>{rep.set(T1+2*k,0,{r:`${rows[k].t} ℃`},ST.td);rep.set(T1+2*k+1,0,'',k===rows.length-1?ST.tdl:ST.td);rep.merge(T1+2*k,0,T1+2*k+1,0);});
+ const W2=1+rows.length;
+ r=table(rep,r,0,'表2　アーレニウスプロット用のデータ整理',['',...rows.map(x=>`${x.t} ℃`)],[
+  [`<i>T</i>^{${M}1} / 10^{${M}3} K^{${M}1}`,...rows.map(x=>x.x.toFixed(3))],
+  ['<i>P</i>_{ind} / s',...rows.map(x=>String(Math.round(x.Pind)))],['<i>P</i>_{osc} / s',...rows.map(x=>x.Posc.toFixed(1))],
+  [`<i>P</i>_{ind}^{${M}1} / 10^{${M}2} s^{${M}1}`,...rows.map(x=>sig(100/x.Pind,3))],[`<i>P</i>_{osc}^{${M}1} / 10^{${M}2} s^{${M}1}`,...rows.map(x=>sig(100/x.Posc,3))],
+  ['ln (1/<i>P</i>_{ind})',...rows.map(x=>fx(x.yi,3))],['ln (1/<i>P</i>_{osc})',...rows.map(x=>fx(x.yo,3))]],'※ <i>T</i> は絶対温度（<i>T</i> = <i>t</i> + 273.15 K）。');
+ const xs=rows.map(x=>x.x),ys=[...rows.map(x=>x.yi),...rows.map(x=>x.yo)];const figW=Math.max(8,n+2),figH=19;
+ const lab=(nm,f)=>`${nm}: <i>y</i> = ${fx(f.a,3)}<i>x</i> ${f.b<0?M:'+'} ${Math.abs(f.b).toFixed(2)}\n<i>R</i>^{2} = ${f.r2.toFixed(3)}`;
+ rep.chart({series:[{name:'誘導期',x:xs,y:rows.map(x=>x.yi),xRef:aref('計算',e0,2,e1,2),yRef:aref('計算',e0,5+n,e1,5+n),marker:'square',color:OF.orange,trend:{name:'線形近似（誘導期）',color:OF.orange,dash:'sysdot',label:{text:lab('誘導期',fi),x:-0.25,y:0.1}}},
+  {name:'振動期',x:xs,y:rows.map(x=>x.yo),xRef:aref('計算',e0,2,e1,2),yRef:aref('計算',e0,6+n,e1,6+n),marker:'circle',color:OF.blue,trend:{name:'線形近似（振動期）',color:OF.blue,dash:'dash',label:{text:lab('振動期',fo),x:0.05,y:-0.12}}}],
+  x:{title:`<i>T</i>^{${M}1} / 10^{${M}3} K^{${M}1}`,...niceAxis(Math.min(...xs)-0.015,Math.max(...xs)+0.015,0.02),fmt:'0.00'},y:{title:'ln (1/<i>P</i>)',...niceAxis(Math.min(...ys)-0.3,Math.max(...ys)+0.3,0.5),fmt:'0.0'},legend:{x:0.6,y:0.45,w:0.36,h:0.3}},r,0,r+figH,8);r+=figH;
+ caption(rep,r,0,'図1　誘導期および振動期のアーレニウスプロット',8);r+=2;
+ r=table(rep,r,0,'表3　誘導期および振動期の活性化エネルギー',['','傾き / K','<i>R</i>^{2}',`<i>E</i>_{a} / kJ mol^{${M}1}`],[['誘導期',sci(fi.a*1000,4),fi.r2.toFixed(3),`${Ea(fi).toFixed(1)} ± ${dEa(fi).toFixed(1)}`],['振動期',sci(fo.a*1000,4),fo.r2.toFixed(3),`${Ea(fo).toFixed(1)} ± ${dEa(fo).toFixed(1)}`]],null,[1,1,2,3]);
+ return {sheets:[rep,cs],res:{rows,fi,fo,Ea:{ind:Ea(fi),osc:Ea(fo),dind:dEa(fi),dosc:dEa(fo)}}};}
+return {colorimetry,btb,oscillation,parseSpectrum,parseTime,fit,peak,steps,btbColor};})();
+if(typeof module!=='undefined')module.exports=LAB;
+
+</script>
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const num=v=>{const x=parseFloat(String(v).replace(/,/g,''));return isFinite(x)?x:NaN;};
+const fmt=(v,d=3)=>isFinite(v)?Number(v).toFixed(d):'—';
+const sci=v=>isFinite(v)?v.toExponential(2).replace('e',' × 10^').replace(/\^\+?(-?\d+)/,(m,e)=>'^'+e):'—';
+const supify=s=>s.replace(/\^(-?\d+)/g,(m,e)=>e.split('').map(ch=>({'-':'⁻','0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹'}[ch])).join(''));
+const sciTxt=v=>supify(sci(v));
+const range=s=>{const m=String(s).match(/(-?\d+(?:\.\d+)?)\s*[-–〜~,]\s*(-?\d+(?:\.\d+)?)/);return m?[+m[1],+m[2]].sort((a,b)=>a-b):null;};
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const state={tab:'colorimetry',sample:{colorimetry:true,btb:true,oscillation:true},c:{spec:[null,null]},b:{files:[]},o:{rows:[]}};
+
+/* ---------------- tiny canvas plotter ---------------- */
+function nice(lo,hi,n=5){const span=hi-lo||1;const step0=span/n;const mag=10**Math.floor(Math.log10(step0));const st=[1,2,2.5,5,10].map(k=>k*mag).find(s=>s>=step0)||mag*10;return {lo:Math.floor(lo/st)*st,hi:Math.ceil(hi/st)*st,st};}
+function plot(cv,o){const dpr=window.devicePixelRatio||1;const W=cv.width,H=cv.height;if(!cv._w){cv._w=W;cv._h=H;}cv.width=cv._w*dpr;cv.height=cv._h*dpr;const g=cv.getContext('2d');g.scale(dpr,dpr);const w=cv._w,h=cv._h;
+ g.clearRect(0,0,w,h);const ink=css('--ink'),mut=css('--muted'),grid=css('--grid');const L=64,R=16,B=48;
+ g.font='12px '+css('--f-body');const named=o.series.filter(s=>s.name);const lay=[];{let lx=L,ly=14;for(const s of named){const tw=g.measureText(s.name).width+30;if(lx+tw>w-R&&lx>L){lx=L;ly+=17;}lay.push([s,lx,ly]);lx+=tw+8;}}
+ const T=named.length?(lay.length?lay[lay.length-1][2]:0)+14:18;
+ const xs=o.series.flatMap(s=>s.x).filter(isFinite),ys=o.series.flatMap(s=>s.y).filter(isFinite);if(!xs.length){g.fillStyle=mut;g.font='13px '+css('--f-body');g.fillText(o.empty||'データがありません',L,h/2);return;}
+ let xl=o.xmin??Math.min(...xs),xh=o.xmax??Math.max(...xs),yl=o.ymin??Math.min(...ys),yh=o.ymax??Math.max(...ys);if(o.y0)yl=Math.min(0,yl);
+ const nx=nice(xl,xh),ny=nice(yl,yh);if(o.xmin==null){xl=nx.lo;}if(o.xmax==null){xh=nx.hi;}yl=ny.lo;yh=ny.hi;
+ const X=v=>L+(v-xl)/(xh-xl)*(w-L-R),Y=v=>h-B-(v-yl)/(yh-yl)*(h-T-B);
+ g.font='11px '+css('--f-mono');g.lineWidth=1;g.strokeStyle=grid;g.fillStyle=mut;g.textAlign='center';
+ const nxx=nice(xl,xh);for(let v=nxx.lo;v<=xh+1e-9;v+=nxx.st){if(v<xl-1e-9)continue;const x=X(v);g.beginPath();g.moveTo(x,T);g.lineTo(x,h-B);g.stroke();g.fillText(+v.toFixed(6)+'',x,h-B+15);}
+ g.textAlign='right';for(let v=ny.lo;v<=yh+1e-9;v+=ny.st){const y=Y(v);g.beginPath();g.moveTo(L,y);g.lineTo(w-R,y);g.stroke();g.fillText(+v.toFixed(6)+'',L-6,y+4);}
+ g.strokeStyle=mut;g.beginPath();g.moveTo(L,T);g.lineTo(L,h-B);g.lineTo(w-R,h-B);g.stroke();
+ g.fillStyle=ink;g.font='12px '+css('--f-body');g.textAlign='center';g.fillText(o.xlab||'',L+(w-L-R)/2,h-10);g.save();g.translate(14,T+(h-T-B)/2);g.rotate(-Math.PI/2);g.fillText(o.ylab||'',0,0);g.restore();
+ g.save();g.beginPath();g.rect(L,T,w-L-R,h-T-B);g.clip();
+ for(const f of (o.fits||[])){g.strokeStyle=f.color;g.setLineDash([6,4]);g.lineWidth=1.4;g.beginPath();g.moveTo(X(xl),Y(f.a*xl+f.b));g.lineTo(X(xh),Y(f.a*xh+f.b));g.stroke();g.setLineDash([]);}
+ for(const s of o.series){g.strokeStyle=s.color;g.fillStyle=s.color;g.lineWidth=1.6;g.setLineDash(s.dash||[]);
+  if(s.mode==='line'){g.beginPath();let st=false;s.x.forEach((x,i)=>{const y=s.y[i];if(!isFinite(y)||!isFinite(x)){st=false;return;}if(!st){g.moveTo(X(x),Y(y));st=true;}else g.lineTo(X(x),Y(y));});g.stroke();}
+  g.setLineDash([]);if(s.mode==='pts')s.x.forEach((x,i)=>{const y=s.y[i];if(!isFinite(y))return;const px=X(x),py=Y(y);g.beginPath();
+   if(s.marker==='x'){g.lineWidth=2;g.moveTo(px-5,py-5);g.lineTo(px+5,py+5);g.moveTo(px+5,py-5);g.lineTo(px-5,py+5);g.stroke();}
+   else if(s.marker==='sq'){g.rect(px-4.5,py-4.5,9,9);g.fill();}else if(s.marker==='tri'){g.moveTo(px,py-6);g.lineTo(px+5.5,py+4);g.lineTo(px-5.5,py+4);g.closePath();g.fill();}
+   else if(s.marker==='dia'){g.moveTo(px,py-7);g.lineTo(px+6,py);g.lineTo(px,py+7);g.lineTo(px-6,py);g.closePath();g.fill();}else{g.arc(px,py,4.5,0,7);g.fill();}});}
+ g.restore();
+ // legend (above the plot area)
+ g.font='12px '+css('--f-body');g.textAlign='left';
+ for(const [s,lx,ly] of lay){g.strokeStyle=s.color;g.fillStyle=s.color;g.setLineDash(s.dash||[]);g.lineWidth=2;
+  if(s.mode==='line'){g.beginPath();g.moveTo(lx,ly-4);g.lineTo(lx+18,ly-4);g.stroke();}else{g.beginPath();g.arc(lx+9,ly-4,4,0,7);g.fill();}
+  g.setLineDash([]);g.fillStyle=ink;g.fillText(s.name,lx+24,ly);}}
+const COLORS=()=>[css('--c1'),css('--c2'),css('--c3'),css('--c4'),'#7B5EA7','#5B8C3A','#A0522D','#8C8C8C'];
+
+/* ---------------- sample data (fictional) ---------------- */
+const gauss=(x,m,s)=>Math.exp(-0.5*((x-m)/s)**2);
+function sampleCuSpectra(){const a=[],b=[];for(let w=400;w<=1000;w++){a.push([w,+(0.478*gauss(w,608,72)+0.018*gauss(w,455,38)-0.004).toFixed(6)]);b.push([w,+(0.092*gauss(w,790,90)+0.023).toFixed(6)]);}return [{label:'発色させた比色用標準溶液',data:a,name:'サンプル（架空）',lo:'400',hi:'1000',isSample:true},{label:'発色させていない硫酸銅溶液',data:b,name:'サンプル（架空）',lo:'400',hi:'1000',isSample:true}];}
+function sampleBTB(){let s=7;const rnd=()=>{s=(s*16807)%2147483647;return s/2147483647-0.5;};const C=1.2e-5;const pHs=[3.85,6.12,6.88,7.35,7.95,10.45];
+ return pHs.map(pH=>{const fL=1/(1+10**(7.05-pH)),k=1+rnd()*0.008;const d=[];for(let w=350;w<=700;w++){const eH=1.55e4*gauss(w,431,42)+2500*gauss(w,350,25),eL=3.9e4*gauss(w,618,45)+3000*gauss(w,540,25)+5000*gauss(w,398,32)+1500*gauss(w,350,20);d.push([w,+((eH*(1-fL)+eL*fL)*C*k+rnd()*0.002).toFixed(6)]);}
+  return {name:'サンプル_pH'+pH+'.txt',pH:String(pH),color:'',data:d,use:true,isSample:true};});}
+function sampleOsc(){return [[35,`1'32",1'46",1'59",2'13",2'28",2'43",2'57",3'13",3'29",3'45",4'02"`],[40,'69,78,88,97,107,117,127,138,149,160,171'],[45,'48,55,62,69,76,83,91,99,106,114,123'],[50,'35,40,45,50,55,59,64,69,75,80,86']].map(([t,s])=>({t:String(t),times:s.split(',')}));}
+const CDEF={mass:'1.18',M:'249.7',vstd:'100',vflask:'25',vunk:'1.00',l:'1.00',wl:'615',Vspec:'5.00',Vs:'0, 1, 2, 3, 4, 5',A:['0.000','0.098','0.203','0.297','0.402','0.494'],Aunk:'0.336'};
+const BDEF={stock:'0.3',aliq:'1.00',flask:'25',l:'1.00',w1:'435',w2:'615',r1:'375-480',r2:'550-700',ri:'450-560'};
+const SPECL=['発色させた比色用標準溶液','発色させていない硫酸銅溶液'];
+
+/* ---------------- 比色分析 ---------------- */
+function cInit(sample){const d=CDEF;for(const k of ['mass','M','vstd','vflask','vunk','l','wl','Vspec','Vs'])$('c-'+k).value=d[k];
+ $('c-Aunk').value=sample?d.Aunk:'';const tb=$('c-rows');tb.innerHTML='';d.A.forEach((v,i)=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${i+1}</td><td class="l">${i?'比色用標準溶液':'対照液'}<span id="c-sub${i}"></span></td><td><input id="c-A${i}" type="number" step="0.001" value="${sample?v:(i?'':'0.000')}" aria-label="No.${i+1}の吸光度"></td><td><input id="c-u${i}" type="checkbox" checked aria-label="No.${i+1}を検量線に使う"></td>`;tb.appendChild(tr);tr.querySelectorAll('input').forEach(x=>x.addEventListener('input',()=>{touch('colorimetry');update();}));});
+ if(!sample)$('c-mass').value='';state.c.spec=sample?sampleCuSpectra():[null,null];cSpecUI();}
+function cSpecUI(){const box=$('c-spec');box.innerHTML='';
+ [0,1].forEach(i=>{const s=state.c.spec[i];const div=document.createElement('div');div.style.marginBottom='8px';
+  div.innerHTML=`<div class="drop" tabindex="0" role="button">${s?`<b>${SPECL[i]}</b>：${s.name}　（クリックで差し替え）`:`${SPECL[i]}のファイルを選択`}<input type="file" class="sr" accept=".txt,.TXT,.csv"></div>`;box.appendChild(div);
+  const inp=div.querySelector('input'),dr=div.querySelector('.drop');
+  bindDrop(dr,inp,async fs=>{const f=fs[0];const data=LAB.parseSpectrum(await f.text());if(data.length<5){$('c-msg').className='msg err';$('c-msg').textContent=f.name+' から数値データを読み取れませんでした。';return;}
+   state.c.spec=state.c.spec.map(s=>s&&s.isSample?null:s);touch('colorimetry');state.c.spec[i]={label:SPECL[i],data,name:f.name,lo:data[0][0],hi:data[data.length-1][0]};cSpecUI();update();});});}
+function cRead(){const p={mass:num($('c-mass').value),M:num($('c-M').value),vstd:num($('c-vstd').value),vflask:num($('c-vflask').value),vunk:num($('c-vunk').value),l:num($('c-l').value),wl:num($('c-wl').value),Vspec:num($('c-Vspec').value),Aunk:num($('c-Aunk').value),A:[],use:[]};
+ p.V=$('c-Vs').value.split(/[,、\s]+/).filter(Boolean).map(num);for(let i=0;i<6;i++){p.A.push(num($('c-A'+i).value));p.use.push($('c-u'+i).checked);}
+ p.spectra=state.c.spec.filter(Boolean).map(s=>({label:s.label,data:s.data,lo:+s.lo,hi:+s.hi}));return p;}
+function cCheck(p){const e=[];if(!(p.mass>0))e.push('硫酸銅五水和物の質量を入力してください。');if(!(p.M>0&&p.vstd>0&&p.vflask>0&&p.vunk>0&&p.l>0))e.push('テキストの条件に正の数を入力してください。');
+ if(p.V.length!==6||p.V.some(v=>!isFinite(v)))e.push('No.1〜6 の標準溶液の量は「0, 1, 2, 3, 4, 5」のように6つ入力してください。');
+ if(p.A.some(v=>!isFinite(v)))e.push('No.1〜6 の吸光度をすべて入力してください。');if(p.use.filter(Boolean).length<2)e.push('検量線には2点以上が必要です。');if(!isFinite(p.Aunk))e.push('No.7 の吸光度を入力してください。');return e;}
+function cSub(p){for(let i=0;i<6;i++){const el=$('c-sub'+i);if(el)el.textContent=isFinite(p.V[i])?`（${p.V[i].toFixed(2)} mL）`:'';}}
+function cUpdate(){const p=cRead();cSub(p);const e=cCheck(p),m=$('c-msg'),res=$('c-res');if(e.length){m.className='msg err';m.textContent=e.join(' ');res.innerHTML='';plot($('c-cv'),{series:[],empty:'入力を完成させるとグラフが表示されます'});$('c-cv2').hidden=true;return null;}
+ const o=LAB.colorimetry(p),r=o.res;m.className='msg';m.textContent='';
+ const kv=[['検量線（全点）の傾き',`${fmt(r.fall.a,1)} L mol⁻¹`],['もとの硫酸銅溶液の濃度',fmt(r.orig,3)+' mol L⁻¹']];
+ if(r.fuse)kv.push([`No.${r.ex.map(x=>x.no).join(', ')} を除くと（図3）`,fmt(r.orig2,3)+' mol L⁻¹']);
+ r.spec.forEach(s=>{if(s.pk)kv.push([s.label.replace('させた比色用標準溶液','後').replace('させていない硫酸銅溶液','前')+'のピーク',`${Math.round(s.pk.w)} nm, ε = ${fmt(s.eps,1)}`]);});
+ res.innerHTML=kv.map(([k,v])=>`<div class="kv"><span>${k}</span><b>${v}</b></div>`).join('');
+ const cs=COLORS();const ser=[{name:'標準溶液・対照液',mode:'pts',x:r.used.map(x=>x.C*1000),y:r.used.map(x=>x.A),color:'#4472C4'}];if(r.ex.length)ser.push({name:'除いた点（実測値）',mode:'pts',x:r.ex.map(x=>x.C*1000),y:r.ex.map(x=>x.A),color:'#A5A5A5'});ser.push({name:'濃度未知試料',mode:'pts',x:[r.Cu*1000],y:[p.Aunk],color:'#ED7D31'});
+ const fits=[{a:r.fall.a/1000,b:r.fall.b,color:'#4472C4'}];if(r.fuse)fits.push({a:r.fuse.a/1000,b:r.fuse.b,color:'#A5A5A5'});
+ plot($('c-cv'),{series:ser,fits,xlab:'C / 10⁻³ mol L⁻¹',ylab:'A',xmin:0,y0:true});
+ const c2=$('c-cv2');if(p.spectra.length){c2.hidden=false;plot(c2,{series:p.spectra.map((s,i)=>({name:s.label,mode:'line',x:s.data.map(q=>q[0]),y:s.data.map(q=>q[1]),color:i?'#ED7D31':'#4472C4',dash:i?[6,4]:[]})),xlab:'λ / nm',ylab:'A'});}else c2.hidden=true;
+ return o;}
+
+/* ---------------- BTB ---------------- */
+function bInit(sample){for(const k in BDEF)$('b-'+k).value=BDEF[k];state.b.files=sample?sampleBTB():[];bRows();}
+function bRows(){const tb=$('b-rows');tb.innerHTML='';if(!state.b.files.length){tb.innerHTML='<tr><td colspan="5" class="l" style="color:var(--muted)">まだファイルがありません。上の枠からスペクトルのファイルを読み込んでください。</td></tr>';return;}
+ state.b.files.forEach((f,i)=>{const tr=document.createElement('tr');const ph=num(f.pH);tr.innerHTML=`<td class="l mono"><span class="swatch" style="background:${isFinite(ph)?'#'+LAB.btbColor(ph):'transparent'}"></span>${f.name}</td><td><input type="number" step="0.01" value="${f.pH}" style="width:76px" aria-label="${f.name}のpH"></td><td><input type="text" value="${f.color||''}" style="width:84px" aria-label="${f.name}の溶液の色"></td><td><input type="checkbox" ${f.use?'checked':''} aria-label="計算に使う"></td><td><button class="btn small" type="button" aria-label="${f.name}を削除">×</button></td>`;tb.appendChild(tr);
+  const [iph,icol,iuse]=tr.querySelectorAll('input');const sw=tr.querySelector('.swatch');
+  iph.addEventListener('input',e=>{f.pH=e.target.value;const v=num(f.pH);sw.style.background=isFinite(v)?'#'+LAB.btbColor(v):'transparent';touch('btb');update();});
+  icol.addEventListener('input',e=>{f.color=e.target.value;touch('btb');update();});
+  iuse.addEventListener('change',e=>{f.use=e.target.checked;touch('btb');update();});
+  tr.querySelector('button').addEventListener('click',()=>{state.b.files.splice(i,1);touch('btb');bRows();update();});});}
+async function bLoad(fs){for(const f of fs){const data=LAB.parseSpectrum(await f.text());if(data.length<5){$('b-msg').className='msg err';$('b-msg').textContent=f.name+' から数値データを読み取れませんでした。';continue;}
+  state.b.files=state.b.files.filter(x=>!x.isSample);touch('btb');state.b.files.push({name:f.name,pH:'',color:'',data,use:true});}
+ state.b.files.sort((a,b)=>a.name.localeCompare(b.name,'ja',{numeric:true}));bRows();update();}
+function bRead(){const p={stock:num($('b-stock').value),aliq:num($('b-aliq').value),flask:num($('b-flask').value),l:num($('b-l').value),w1:num($('b-w1').value),w2:num($('b-w2').value),r1:range($('b-r1').value),r2:range($('b-r2').value),ri:range($('b-ri').value)};
+ p.samples=state.b.files.map(f=>({pH:num(f.pH),file:f.name,color:(f.color||'').trim(),data:f.data,use:f.use,iso:f.use}));return p;}
+function bCheck(p){const e=[];if(p.samples.length<3)e.push('pHの異なるスペクトルを3つ以上読み込んでください（両端のpHと、その間の溶液）。');else if(p.samples.some(s=>!isFinite(s.pH)))e.push('すべてのファイルにpHを入力してください。');
+ if(!(p.stock>0&&p.aliq>0&&p.flask>0&&p.l>0))e.push('テキストの条件に正の数を入力してください。');if(!isFinite(p.w1)||!isFinite(p.w2))e.push('解析波長を入力してください。');if(!p.r1||!p.r2||!p.ri)e.push('範囲は「375-480」のように入力してください。');return e;}
+function bUpdate(){const p=bRead(),e=bCheck(p),m=$('b-msg'),res=$('b-res');
+ if(e.length){m.className='msg err';m.textContent=e.join(' ');res.innerHTML='';plot($('b-cv'),{series:[],empty:'スペクトルを読み込むとグラフが表示されます'});plot($('b-cv2'),{series:[],empty:''});return null;}
+ const o=LAB.btb(p),r=o.res;const notes=[];
+ const bad=r.rowsA.slice(1,-1).filter(x=>!isFinite(x.y1)||!isFinite(x.y2));if(bad.length)notes.push('pH '+bad.map(x=>x.pH.toFixed(2)).join('、')+' は log 値が求められない波長があります（表3では「解なし」）。');
+ if(r.steps.length)notes.push('約 '+r.steps.join(' nm、約 ')+' nm に装置の段差があります。');
+ const bs=r.base.map(b=>b.a),med=[...bs].sort((a,b)=>a-b)[Math.floor(bs.length/2)];const off=r.base.filter(b=>Math.abs(b.a-med)>0.025);if(off.length)notes.push('pH '+off.map(b=>b.pH.toFixed(2)).join('、')+' はスペクトル全体が上下にずれている可能性があります（「計算に使う」を外すと除けます）。');
+ m.className=notes.length?'msg warn':'msg';m.textContent=notes.join(' ');
+ const pk=f=>f?fmt(-f.b/f.a,2):'—';
+ res.innerHTML=[[`pKa（${p.w1} nm / ${p.w2} nm）`,pk(r.f1)+' / '+pk(r.f2)],['pKa の平均',fmt(r.pkm,2)],['等吸収点',r.iso?r.iso.w+' nm':'—']].map(([k,v])=>`<div class="kv"><span>${k}</span><b>${v}</b></div>`).join('');
+ plot($('b-cv'),{series:r.S.map(s=>({name:'pH '+s.pH.toFixed(2),mode:'line',x:s.data.map(q=>q[0]),y:s.data.map(q=>q[1]),color:'#'+LAB.btbColor(s.pH)})),xlab:'λ / nm',ylab:'A'});
+ const ser=[],fits=[];if(r.u1.length){ser.push({name:p.w1+' nm',mode:'pts',x:r.u1.map(x=>x.pH),y:r.u1.map(x=>x.y1),color:'#ED7D31'});fits.push({...r.f1,color:'#ED7D31'});}
+ if(r.u2.length){ser.push({name:p.w2+' nm',mode:'pts',marker:'tri',x:r.u2.map(x=>x.pH),y:r.u2.map(x=>x.y2),color:'#4472C4'});fits.push({...r.f2,color:'#4472C4'});}
+ plot($('b-cv2'),{series:ser,fits:fits.filter(f=>isFinite(f.a)),xlab:'pH',ylab:'log₁₀{(A−A₁)/(A₂−A)}',empty:'計算に使える点がありません'});
+ return o;}
+
+/* ---------------- 振動反応 ---------------- */
+function oInit(sample){$('o-n').value='11';state.o.rows=sample?sampleOsc():[{t:'35',times:[]},{t:'40',times:[]},{t:'45',times:[]},{t:'50',times:[]}];oRows();}
+function oRows(){const n=Math.max(3,Math.min(30,parseInt($('o-n').value)||11));$('o-head').innerHTML=`<tr><th>温度 / ℃</th>${Array.from({length:n},(_,i)=>`<th>${i+1}</th>`).join('')}<th></th></tr>`;
+ const tb=$('o-rows');tb.innerHTML='';state.o.rows.forEach((r,k)=>{const tr=document.createElement('tr');tr.innerHTML=`<td><input type="number" step="0.1" id="o-t${k}" value="${r.t}" style="width:64px" aria-label="温度"></td>`+Array.from({length:n},(_,i)=>`<td><input type="text" id="o-${k}-${i}" value="${r.times[i]??''}" style="width:62px" aria-label="${r.t}℃の${i+1}回目"></td>`).join('')+`<td><button class="btn small" type="button" data-del="${k}">削除</button></td>`;tb.appendChild(tr);
+  tr.querySelector('#o-t'+k).addEventListener('input',e=>{r.t=e.target.value;touch('oscillation');update();});
+  for(let i=0;i<n;i++)tr.querySelector(`#o-${k}-${i}`).addEventListener('input',e=>{r.times[i]=e.target.value;touch('oscillation');update();});
+  tr.querySelector('[data-del]').addEventListener('click',()=>{state.o.rows.splice(k,1);touch('oscillation');oRows();update();});});}
+function oRead(){const n=Math.max(3,Math.min(30,parseInt($('o-n').value)||11));return {n,temps:state.o.rows.map(r=>({t:num(r.t),times:Array.from({length:n},(_,i)=>LAB.parseTime(r.times[i]))}))};}
+function oCheck(p){const e=[];if(p.temps.length<2)e.push('温度は2つ以上必要です。');
+ p.temps.forEach(t=>{if(!isFinite(t.t))e.push('温度を入力してください。');const bad=t.times.findIndex(v=>!isFinite(v));if(bad>=0)e.push(`${isFinite(t.t)?t.t+' ℃':'温度未入力の行'}の${bad+1}回目の時間を読み取れません。`);else if(t.times.some((v,i)=>i&&v<=t.times[i-1]))e.push(`${t.t} ℃の時間が増えていない箇所があります。`);});return [...new Set(e)];}
+function oUpdate(){const p=oRead(),e=oCheck(p),m=$('o-msg'),res=$('o-res');if(e.length){m.className='msg err';m.textContent=e.join(' ');res.innerHTML='';plot($('o-cv'),{series:[],empty:'すべての時間を入力するとグラフが表示されます'});return null;}
+ const o=LAB.oscillation(p),r=o.res,cs=COLORS();m.className='msg';m.textContent='';
+ res.innerHTML=[['Ea（誘導期）',fmt(r.Ea.ind,1)+' ± '+fmt(r.Ea.dind,1)+' kJ mol⁻¹'],['Ea（振動期）',fmt(r.Ea.osc,1)+' ± '+fmt(r.Ea.dosc,1)+' kJ mol⁻¹']].map(([k,v])=>`<div class="kv"><span>${k}</span><b>${v}</b></div>`).join('');
+ plot($('o-cv'),{series:[{name:'誘導期',mode:'pts',marker:'sq',x:r.rows.map(x=>x.x),y:r.rows.map(x=>x.yi),color:'#ED7D31'},{name:'振動期',mode:'pts',x:r.rows.map(x=>x.x),y:r.rows.map(x=>x.yo),color:'#4472C4'}],fits:[{...r.fi,color:'#ED7D31'},{...r.fo,color:'#4472C4'}],xlab:'T⁻¹ / 10⁻³ K⁻¹',ylab:'ln (1/P)'});
+ return o;}
+
+/* ---------------- shell ---------------- */
+function bindDrop(dr,inp,cb){dr.addEventListener('click',e=>{if(e.target!==inp)inp.click();});dr.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();inp.click();}});
+ inp.addEventListener('change',()=>{if(inp.files.length)cb([...inp.files]);inp.value='';});
+ dr.addEventListener('dragover',e=>{e.preventDefault();dr.classList.add('over');});dr.addEventListener('dragleave',()=>dr.classList.remove('over'));dr.addEventListener('drop',e=>{e.preventDefault();dr.classList.remove('over');if(e.dataTransfer.files.length)cb([...e.dataTransfer.files]);});}
+function touch(t){if(state.sample[t]){state.sample[t]=false;note();}}
+function note(){const s=state.sample[state.tab];$('bar-note').innerHTML=s?'<span class="chip">サンプル値を表示中</span> 自分の測定値に書き換えてから作成してください。':'<span class="chip ok">自分の値</span> 「レポート用」シートに表と図、「計算」シートに途中計算が入ります。';}
+const UPD={colorimetry:cUpdate,btb:bUpdate,oscillation:oUpdate};
+function update(){return UPD[state.tab]();}
+function show(tab){const t=tab||(location.hash||'').slice(1);state.tab=UPD[t]?t:'colorimetry';document.querySelectorAll('nav a').forEach(a=>a.setAttribute('aria-current',a.dataset.tab===state.tab?'page':'false'));
+ for(const k in UPD)$('p-'+k).hidden=k!==state.tab;note();update();}
+const NAMES={colorimetry:'比色分析_図表.xlsx',btb:'BTB_吸収スペクトル_図表.xlsx',oscillation:'振動反応_図表.xlsx'};
+async function save(name,bytes){const sm=$('save-msg');sm.className='msg';sm.textContent='';
+ try{if(window.claude&&typeof window.claude.use==='function'){const d=await window.claude.use('downloads');if(d){try{await d.save({filename:name,data:new Blob([bytes])});sm.textContent=name+' を保存しました。';}catch(e){const c=e&&e.code;sm.className='msg '+(c==='declined'?'':'err');sm.textContent=c==='declined'?'保存はキャンセルされました。':c==='rate_limited'?'保存の確認画面がすでに開いています。少し待ってからもう一度押してください。':'保存できませんでした（'+(c||'不明なエラー')+'）。';}return;}}}catch(e){}
+ const url=URL.createObjectURL(new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);sm.textContent=name+' を作成しました。';}
+$('export').addEventListener('click',async()=>{const o=update();if(!o){$('save-msg').className='msg err';$('save-msg').textContent='入力に足りない所があります。上の赤い文字を確認してください。';return;}
+ await save(NAMES[state.tab],XL.build(o.sheets));});
+const INIT={colorimetry:cInit,btb:bInit,oscillation:oInit};
+$('clear').addEventListener('click',()=>{const t=state.tab;state.sample[t]=false;INIT[t](false);$('save-msg').textContent='';note();update();});
+$('b-clear').addEventListener('click',()=>{state.b.files=[];state.sample.btb=false;note();bRows();update();});
+$('sample').addEventListener('click',()=>{const t=state.tab;state.sample[t]=true;({colorimetry:cInit,btb:bInit,oscillation:oInit})[t](true);note();update();});
+document.querySelectorAll('#p-colorimetry .grid2 input').forEach(x=>x.addEventListener('input',()=>{touch('colorimetry');update();}));
+document.querySelectorAll('#p-btb details input').forEach(x=>x.addEventListener('input',()=>{touch('btb');update();}));
+$('o-n').addEventListener('change',()=>{touch('oscillation');oRows();update();});
+$('o-add').addEventListener('click',()=>{state.o.rows.push({t:'',times:[]});touch('oscillation');oRows();update();});
+bindDrop($('b-drop'),$('b-file'),bLoad);
+cInit(true);
+bInit(true);oInit(true);
+window.addEventListener('hashchange',()=>show());
+document.querySelectorAll('nav a').forEach(el=>el.addEventListener('click',e=>{e.preventDefault();const t=el.dataset.tab;show(t);try{if(location.hash!=='#'+t)history.replaceState(null,'','#'+t);}catch(_){}}));
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>update());
+new MutationObserver(()=>update()).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+show();
+})();
+
+</script>
+</body></html>
