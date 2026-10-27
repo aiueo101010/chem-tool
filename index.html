@@ -30,6 +30,24 @@ nav a{padding:10px 14px;text-decoration:none;color:var(--muted);border-bottom:3p
 nav a[aria-current="page"]{color:var(--ink);border-color:var(--accent)}
 nav a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 [hidden]{display:none!important}
+.wide{grid-column:1/-1}
+.rep{display:grid;gap:22px}
+.rep-item{display:grid;gap:8px;justify-items:center;padding-bottom:18px;border-bottom:1px dashed var(--line)}
+.rep-item:last-child{border-bottom:none;padding-bottom:0}
+.rep-tbl{max-width:100%;overflow-x:auto;background:#fff;color:#000;padding:12px 16px;border-radius:6px;font-family:"Yu Mincho","YuMincho","Hiragino Mincho ProN",serif}
+.rep-tbl table{border-collapse:collapse;margin:0 auto;width:auto;font-size:14px}
+.rep-tbl th,.rep-tbl td{background:none;color:#000;font-weight:400;border:0;padding:2px 12px;white-space:nowrap;text-align:center;font-size:14px}
+.rep-tbl thead th{border-top:2px solid #000;border-bottom:1px solid #000}
+.rep-tbl td.last,.rep-tbl tr:last-child td{border-bottom:2px solid #000}
+.rep-tbl .cap{margin:0 0 4px;text-align:center;font-size:14px}
+.rep-tbl .note{margin:4px 0 0;font-size:12px}
+.rep-fig{width:100%;max-width:760px}
+.rep-fig canvas{width:100%;height:auto;border:1px solid var(--line);border-radius:6px;background:#fff;touch-action:pan-y}
+.rep-item>.cap{margin:0;font-size:14px;font-family:"Yu Mincho","YuMincho","Hiragino Mincho ProN",serif;text-align:center}
+.rep-act{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center}
+.rep-msg{font-size:12px;color:var(--accent)}
+@media (max-width:600px){.rep-tbl{padding:8px 6px}.rep-tbl table,.rep-tbl th,.rep-tbl td,.rep-tbl .cap{font-size:12px}.rep-tbl th,.rep-tbl td{padding:2px 6px}.rep-tbl .cap{white-space:normal}}
+
 .panel{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:22px;align-items:start}
 @media (max-width:860px){.panel{grid-template-columns:1fr}}
 .col{display:grid;gap:18px;min-width:0}
@@ -81,7 +99,7 @@ details.box[open]>summary{color:var(--ink)}
 <div class="wrap">
 <header>
  <h1>化学実験 第3実験室 図表メーカー<small>LAB 3 · XLSX</small></h1>
- <p class="lead">第3実験室のレポートで使う表とグラフを、測定値を入力するだけでExcelファイルにします。スペクトルは分光光度計のテキストファイル（JASCO形式）をそのまま読み込めます。Excelの「レポート用」シートには、レポートと同じ形式（三線表・図の書式）の表とグラフだけが入ります。計算の途中は「計算」シートにあります。</p>
+ <p class="lead">第3実験室のレポートで使う表とグラフを、測定値を入力するだけでExcelファイルにします。スペクトルは分光光度計のテキストファイル（JASCO形式）をそのまま読み込めます。Excelの「レポート用」シートには、レポートと同じ形式（三線表・図の書式）の表とグラフだけが入ります。計算の途中は「計算」シートにあります。ページの下では、その表と図をそのまま確認でき、表はWordへコピー、図はPNG保存・コピーができます。</p>
 </header>
 
 <nav aria-label="実験の切り替え">
@@ -122,11 +140,14 @@ details.box[open]>summary{color:var(--ink)}
   <section class="box">
    <h2>結果</h2>
    <div class="results" id="c-res"></div>
-   <canvas id="c-cv" width="640" height="420" aria-label="検量線のプレビュー"></canvas>
-   <canvas id="c-cv2" width="640" height="360" aria-label="スペクトルのプレビュー" hidden></canvas>
    <p class="msg" id="c-msg"></p>
   </section>
  </div>
+ <section class="box wide">
+  <h2>レポートの表と図<span class="tag">Excelの「レポート用」シートと同じ</span></h2>
+  <p class="hint">表は「表をコピー」でWordにそのまま貼り付けられます（三線・游明朝）。図は凡例をドラッグして位置を変えられ、その位置でExcelにも入ります。</p>
+  <div class="rep" id="c-rep"></div>
+ </section>
 </div>
 
 <!-- ============ BTB ============ -->
@@ -157,11 +178,14 @@ details.box[open]>summary{color:var(--ink)}
   <section class="box">
    <h2>結果</h2>
    <div class="results" id="b-res"></div>
-   <canvas id="b-cv" width="640" height="380" aria-label="スペクトルのプレビュー"></canvas>
-   <canvas id="b-cv2" width="640" height="380" aria-label="log値とpHの関係のプレビュー"></canvas>
    <p class="msg" id="b-msg"></p>
   </section>
  </div>
+ <section class="box wide">
+  <h2>レポートの表と図<span class="tag">Excelの「レポート用」シートと同じ</span></h2>
+  <p class="hint">表は「表をコピー」でWordにそのまま貼り付けられます（三線・游明朝）。図は凡例をドラッグして位置を変えられ、その位置でExcelにも入ります。</p>
+  <div class="rep" id="b-rep"></div>
+ </section>
 </div>
 
 <!-- ============ 振動反応 ============ -->
@@ -179,10 +203,14 @@ details.box[open]>summary{color:var(--ink)}
   <section class="box">
    <h2>結果</h2>
    <div class="results" id="o-res"></div>
-   <canvas id="o-cv" width="640" height="420" aria-label="アーレニウスプロットのプレビュー"></canvas>
    <p class="msg" id="o-msg"></p>
   </section>
  </div>
+ <section class="box wide">
+  <h2>レポートの表と図<span class="tag">Excelの「レポート用」シートと同じ</span></h2>
+  <p class="hint">表は「表をコピー」でWordにそのまま貼り付けられます（三線・游明朝）。図は凡例をドラッグして位置を変えられ、その位置でExcelにも入ります。</p>
+  <div class="rep" id="o-rep"></div>
+ </section>
 </div>
 
 <div class="bar">
@@ -337,18 +365,20 @@ function parseTime(s){s=String(s??'').trim().replace(/\s+/g,'');if(!s)return NaN
 function btbColor(pH){const f=1/(1+10**(7.1-pH));const st=[[0,[214,170,0]],[0.5,[56,150,72]],[1,[33,64,160]]];let a=st[0],b=st[2];if(f<=0.5){a=st[0];b=st[1];}else{a=st[1];b=st[2];}const t=(f-a[0])/(b[0]-a[0]);
  return a[1].map((v,i)=>Math.round(v+(b[1][i]-v)*t).toString(16).padStart(2,'0')).join('').toUpperCase();}
 function niceAxis(lo,hi,step){return {min:+(Math.floor(lo/step+1e-9)*step).toFixed(6),max:+(Math.ceil(hi/step-1e-9)*step).toFixed(6),major:step};}
+/* ---------- what goes on the report sheet, in order (used for the on-screen preview / copy / PNG) ---------- */
+let REP=[];
 /* ---------- report-style table (three-line, 游明朝, centred) ---------- */
-function table(sh,r,c,caption,head,rows,note,spans){const sp=spans||head.map(()=>1);const W=sp.reduce((a,b)=>a+b,0);const pos=sp.map((_,j)=>c+sp.slice(0,j).reduce((a,b)=>a+b,0));
+function table(sh,r,c,caption,head,rows,note,spans){REP.push({type:'table',r,caption,head,rows,note,spans});const sp=spans||head.map(()=>1);const W=sp.reduce((a,b)=>a+b,0);const pos=sp.map((_,j)=>c+sp.slice(0,j).reduce((a,b)=>a+b,0));
  sh.set(r,c,{r:caption},ST.cap);if(W>1)sh.merge(r,c,r,c+W-1);
  const put=(rr,j,v,st)=>{sh.set(rr,pos[j],{r:String(v)},st);for(let k=1;k<sp[j];k++)sh.set(rr,pos[j]+k,'',st);if(sp[j]>1)sh.merge(rr,pos[j],rr,pos[j]+sp[j]-1);};
  head.forEach((h,j)=>put(r+1,j,h,ST.th));
  rows.forEach((row,i)=>row.forEach((v,j)=>put(r+2+i,j,v,i===rows.length-1?ST.tdl:ST.td)));
  let end=r+2+rows.length;if(note){sh.set(end,c,{r:note},ST.tn);end++;}return end+1;}
-function caption(sh,r,c,text,w){sh.set(r,c,{r:text},ST.cap);sh.merge(r,c,r,c+w-1);}
+function caption(sh,r,c,text,w){sh.set(r,c,{r:text},ST.cap);sh.merge(r,c,r,c+w-1);const ch=sh.charts[sh.charts.length-1];if(ch&&!ch.caption){ch.caption=text;REP.push({type:'fig',r:ch.r,caption:text,chart:ch,sheet:sh});}}
 const XFMT=d=>d<=0?'0':'0.'+'0'.repeat(d);
 
 /* ================== 比色分析 ================== */
-function colorimetry(p){
+function colorimetry(p){REP=[];
  const rep=new Sheet('レポート用');rep.grid=false;const cs=new Sheet('計算');
  [6,20,12,16,16,20,10,10].forEach((w,i)=>rep.width(i,w));
  const n=p.mass/p.M,cstd=n/(p.vstd/1000),cstdR=roundSig(cstd,3);
@@ -409,10 +439,10 @@ function colorimetry(p){
    {name:`No.${nm}（実測値）`,x:ex.map(x=>x.C*1000),y:ex.map(x=>x.A),xRef:aref('計算',EB+1,2,EB+ex.length,2),yRef:aref('計算',EB+1,3,EB+ex.length,3),marker:'circle',color:OF.gray}];
   rep.chart({series:ser,x:{title:`<i>C</i> / 10^{${M}3} mol L^{${M}1}`,...xa2},y:{title:'<i>A</i>',min:Math.min(fuse.b,0)<0?-0.1:0,max:ya2.max,major:0.1,fmt:'0.0'},legend:{x:0.1,y:0.04,w:0.55,h:0.3}},r,0,r+figH,figW);r+=figH;
   caption(rep,r,0,`図3　No.${nm} を除いた検量線`,figW);r+=2;}
- return {sheets:[rep,cs],res:{n,cstd,fall,fuse,Cu,orig,Cu2,orig2:Cu2*p.vflask/p.vunk,rows,used,ex,spec:specInfo.map(x=>({label:x.s.label,pk:x.pk,eps:x.pk?x.pk.a/(Cs*p.l):NaN}))}};}
+ return {sheets:[rep,cs],report:REP,res:{n,cstd,fall,fuse,Cu,orig,Cu2,orig2:Cu2*p.vflask/p.vunk,rows,used,ex,spec:specInfo.map(x=>({label:x.s.label,pk:x.pk,eps:x.pk?x.pk.a/(Cs*p.l):NaN}))}};}
 
 /* ================== BTB ================== */
-function btb(p){
+function btb(p){REP=[];
  const S=[...p.samples].sort((a,b)=>a.pH-b.pH);const N=S.length;const C0=p.stock*1e-3*p.aliq/p.flask;const l=p.l;
  const grid=[...new Set(S.flatMap(s=>s.data.map(q=>q[0])))].sort((a,b)=>a-b);const maps=S.map(s=>new Map(s.data.map(q=>[q[0],q[1]])));
  const rep=new Sheet('レポート用');rep.grid=false;const cs=new Sheet('計算');
@@ -473,10 +503,10 @@ function btb(p){
   rep.chart({series:ser,x:{title:'pH',...niceAxis(Math.min(...xs)-0.2,Math.max(...xs)+0.2,0.25),fmt:'0.00'},y:{title:LOG,...niceAxis(Math.min(...ys)-0.2,Math.max(...ys)+0.2,0.25),fmt:'0.00'},legend:{x:0.1,y:0.04,w:0.36,h:0.26}},r,0,r+figH,figW);r+=figH;
   caption(rep,r,0,'図3　BTB の吸光度と pH の関係',figW);r+=2;}
  r=table(rep,r,0,'表4　近似直線の傾き・切片と求めた p<i>K</i>_{a}',['波長','傾き','切片','<i>R</i>^{2}','p<i>K</i>_{a}'],[[`${p.w1} nm`,f1?fx(f1.a,3):'—',f1?fx(f1.b,3):'—',f1?f1.r2.toFixed(3):'—',isFinite(pk1)?pk1.toFixed(2):'—'],[`${p.w2} nm`,f2?fx(f2.a,3):'—',f2?fx(f2.b,3):'—',f2?f2.r2.toFixed(3):'—',isFinite(pk2)?pk2.toFixed(2):'—']]);
- return {sheets:[rep,cs],res:{C0,rowsA,f1,f2,pkm,u1,u2,peaks,iso,steps:stp,base,S,grid,maps}};}
+ return {sheets:[rep,cs],report:REP,res:{C0,rowsA,f1,f2,pkm,u1,u2,peaks,iso,steps:stp,base,S,grid,maps}};}
 
 /* ================== 振動反応 ================== */
-function oscillation(p){const n=p.n;
+function oscillation(p){REP=[];const n=p.n;
  const rep=new Sheet('レポート用');rep.grid=false;const cs=new Sheet('計算');
  const rows=p.temps.map(t=>{const ts=t.times;const Pind=ts[0],Posc=(ts[n-1]-ts[0])/(n-1),T=t.t+273.15;return {t:t.t,T,Pind,Posc,ts,x:1000/T,yi:Math.log(1/Pind),yo:Math.log(1/Posc)};});
  const fi=fit(rows.map(x=>x.x),rows.map(x=>x.yi)),fo=fit(rows.map(x=>x.x),rows.map(x=>x.yo));const R=8.314;
@@ -493,7 +523,7 @@ function oscillation(p){const n=p.n;
  rep.width(0,22).width(1,12);for(let c=2;c<2+n;c++)rep.width(c,7);
  let r=0;rep.set(r,0,'化学的振動反応：レポート用の表と図',ST.sub);r+=2;
  const t1=[];rows.forEach(x=>{t1.push([`${x.t} ℃`,'時間 / s',...x.ts.map(v=>String(Math.round(v)))]);t1.push(['','周期 / s',...x.ts.map((v,i)=>String(Math.round(i?v-x.ts[i-1]:v)))]);});
- const T1=r+2;r=table(rep,r,0,'表1　発色の回数と時間（時間は反応開始からの経過時間）',['温度','項目',...Array.from({length:n},(_,i)=>String(i+1))],t1,'※ 1回目の周期は誘導期 <i>P</i>_{ind} に等しい。');rows.forEach((_,k)=>{rep.set(T1+2*k,0,{r:`${rows[k].t} ℃`},ST.td);rep.set(T1+2*k+1,0,'',k===rows.length-1?ST.tdl:ST.td);rep.merge(T1+2*k,0,T1+2*k+1,0);});
+ const T1=r+2;r=table(rep,r,0,'表1　発色の回数と時間（時間は反応開始からの経過時間）',['温度','項目',...Array.from({length:n},(_,i)=>String(i+1))],t1,'※ 1回目の周期は誘導期 <i>P</i>_{ind} に等しい。');rows.forEach((_,k)=>{rep.set(T1+2*k,0,{r:`${rows[k].t} ℃`},ST.td);rep.set(T1+2*k+1,0,'',k===rows.length-1?ST.tdl:ST.td);rep.merge(T1+2*k,0,T1+2*k+1,0);});REP.find(x=>x.type==='table').vmerge=2;
  const W2=1+rows.length;
  r=table(rep,r,0,'表2　アーレニウスプロット用のデータ整理',['',...rows.map(x=>`${x.t} ℃`)],[
   [`<i>T</i>^{${M}1} / 10^{${M}3} K^{${M}1}`,...rows.map(x=>x.x.toFixed(3))],
@@ -507,9 +537,145 @@ function oscillation(p){const n=p.n;
   x:{title:`<i>T</i>^{${M}1} / 10^{${M}3} K^{${M}1}`,...niceAxis(Math.min(...xs)-0.015,Math.max(...xs)+0.015,0.02),fmt:'0.00'},y:{title:'ln (1/<i>P</i>)',...niceAxis(Math.min(...ys)-0.3,Math.max(...ys)+0.3,0.5),fmt:'0.0'},legend:{x:0.6,y:0.45,w:0.36,h:0.3}},r,0,r+figH,8);r+=figH;
  caption(rep,r,0,'図1　誘導期および振動期のアーレニウスプロット',8);r+=2;
  r=table(rep,r,0,'表3　誘導期および振動期の活性化エネルギー',['','傾き / K','<i>R</i>^{2}',`<i>E</i>_{a} / kJ mol^{${M}1}`],[['誘導期',sci(fi.a*1000,4),fi.r2.toFixed(3),`${Ea(fi).toFixed(1)} ± ${dEa(fi).toFixed(1)}`],['振動期',sci(fo.a*1000,4),fo.r2.toFixed(3),`${Ea(fo).toFixed(1)} ± ${dEa(fo).toFixed(1)}`]],null,[1,1,2,3]);
- return {sheets:[rep,cs],res:{rows,fi,fo,Ea:{ind:Ea(fi),osc:Ea(fo),dind:dEa(fi),dosc:dEa(fo)}}};}
+ return {sheets:[rep,cs],report:REP,res:{rows,fi,fo,Ea:{ind:Ea(fi),osc:Ea(fo),dind:dEa(fi),dosc:dEa(fo)}}};}
 return {colorimetry,btb,oscillation,parseSpectrum,parseTime,fit,peak,steps,btbColor};})();
 if(typeof module!=='undefined')module.exports=LAB;
+
+</script>
+<script>
+/* ---- on-screen report preview: the tables and figures exactly as they go on the 「レポート用」 sheet ----
+   tables → three-line HTML table with a "copy for Word" button
+   figures → canvas drawing that mirrors the Excel chart (same axes, ticks from the minimum, legend box, trendline / data labels),
+             legend can be dragged (the position is written into the Excel chart), PNG save / image copy */
+const REPORT=(()=>{
+const FONT='"Yu Gothic","YuGothic","Hiragino Sans","Meiryo",sans-serif';
+const MINCHO='"Yu Mincho","YuMincho","Hiragino Mincho ProN","MS PMincho",serif';
+const GRAY='#595959';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+/* markup: ^{sup} _{sub} <i>it</i> */
+function runs(s){const out=[];const re=/(\^\{[^}]*\}|_\{[^}]*\}|<i>.*?<\/i>)/g;let last=0,m;s=String(s??'');
+ while((m=re.exec(s))){if(m.index>last)out.push({t:s.slice(last,m.index)});const t=m[0];if(t[0]==='^')out.push({t:t.slice(2,-1),sup:1});else if(t[0]==='_')out.push({t:t.slice(2,-1),sub:1});else out.push({t:t.slice(3,-4),i:1});last=re.lastIndex;}
+ if(last<s.length)out.push({t:s.slice(last)});return out;}
+const html=s=>runs(s).map(r=>r.sup?`<sup>${esc(r.t)}</sup>`:r.sub?`<sub>${esc(r.t)}</sub>`:r.i?`<i>${esc(r.t)}</i>`:esc(r.t)).join('');
+const plain=s=>runs(s).map(r=>r.t).join('');
+function rfont(r,size){return `${r.i?'italic ':''}${r.sup||r.sub?size*0.7:size}px ${FONT}`;}
+function rwidth(g,s,size){let w=0;for(const r of runs(s)){g.font=rfont(r,size);w+=g.measureText(r.t).width;}return w;}
+function rdraw(g,s,x,y,size,align='left'){const w=rwidth(g,s,size);let cx=align==='center'?x-w/2:align==='right'?x-w:x;g.textAlign='left';
+ for(const r of runs(s)){g.font=rfont(r,size);g.fillText(r.t,cx,y+(r.sup?-size*0.38:r.sub?size*0.22:0));cx+=g.measureText(r.t).width;}return w;}
+
+/* ---------- figure geometry from the sheet (two-cell anchor → pixels, as Excel does) ---------- */
+const colPx=(sh,c)=>Math.round((sh.widths[c]??8.43)*7+5);
+function chartSize(sh,a){let w=0;for(let c=a.c;c<a.c2;c++)w+=colPx(sh,c);return {W:w,H:(a.r2-a.r)*24};}
+function fmtNum(v,fmt){if(Math.abs(v)<1e-12)v=0;const m=/^0(?:\.(0+))?$/.exec(fmt||'');const s=m?v.toFixed(m[1]?m[1].length:0):String(+v.toPrecision(10));return s.replace('-','−');}
+function fit(x,y){const n=x.length;if(n<2)return null;const mx=x.reduce((a,b)=>a+b,0)/n,my=y.reduce((a,b)=>a+b,0)/n;let sxx=0,sxy=0;for(let i=0;i<n;i++){sxx+=(x[i]-mx)**2;sxy+=(x[i]-mx)*(y[i]-my);}const a=sxy/sxx;return {a,b:my-a*mx};}
+function dashArr(d,w){const u=Math.max(d==='sysdot'||d==='dot'?2:1,w);return d==='dash'||d==='sysdash'?[4*u,3*u]:d==='sysdot'||d==='dot'?[u,u]:d==='dashdot'?[4*u,2*u,u,2*u]:[];}
+function marker(g,sym,x,y,size,color){const r=size/2+0.5;g.fillStyle=color;g.beginPath();
+ if(sym==='square')g.rect(x-r,y-r,2*r,2*r);else if(sym==='triangle'){g.moveTo(x,y-r*1.15);g.lineTo(x+r*1.1,y+r*0.8);g.lineTo(x-r*1.1,y+r*0.8);g.closePath();}else if(sym==='diamond'){g.moveTo(x,y-r*1.2);g.lineTo(x+r*1.2,y);g.lineTo(x,y+r*1.2);g.lineTo(x-r*1.2,y);g.closePath();}else g.arc(x,y,r,0,7);g.fill();}
+
+/* draw one chart spec (the same object handed to the xlsx writer) into a W×H box */
+function draw(g,ch,W,H){g.fillStyle='#fff';g.fillRect(0,0,W,H);
+ const xa=ch.x,ya=ch.y;const yl=Math.max(...[ya.min,ya.max,ya.min+ya.major].map(v=>rwidth(g,fmtNum(v,ya.fmt),12)));
+ const PL=Math.round(yl+40),PR=16,PT=14,PB=52;const pw=W-PL-PR,ph=H-PT-PB;
+ const X=v=>PL+(v-xa.min)/(xa.max-xa.min)*pw,Y=v=>PT+ph-(v-ya.min)/(ya.max-ya.min)*ph;
+ g.lineWidth=1;g.font=`12px ${FONT}`;
+ // gridlines + tick labels (Excel counts ticks from the axis minimum)
+ for(let k=0;k<=200;k++){const v=xa.min+k*xa.major;if(v>xa.max+xa.major*1e-6)break;const x=Math.round(X(v))+.5;g.strokeStyle='#D9D9D9';g.beginPath();g.moveTo(x,PT);g.lineTo(x,PT+ph);g.stroke();g.fillStyle=GRAY;g.textAlign='center';g.fillText(fmtNum(v,xa.fmt),x,PT+ph+16);}
+ for(let k=0;k<=200;k++){const v=ya.min+k*ya.major;if(v>ya.max+ya.major*1e-6)break;const y=Math.round(Y(v))+.5;g.strokeStyle='#D9D9D9';g.beginPath();g.moveTo(PL,y);g.lineTo(PL+pw,y);g.stroke();g.fillStyle=GRAY;g.textAlign='right';g.font=`12px ${FONT}`;g.fillText(fmtNum(v,ya.fmt),PL-6,y+4);}
+ // axis lines cross at zero (or at the nearer end when zero is outside the range)
+ const cz=(a)=>Math.min(Math.max(0,a.min),a.max);g.strokeStyle='#BFBFBF';g.beginPath();const y0=Math.round(Y(cz(ya)))+.5,x0=Math.round(X(cz(xa)))+.5;g.moveTo(PL,y0);g.lineTo(PL+pw,y0);g.moveTo(x0,PT);g.lineTo(x0,PT+ph);g.stroke();
+ g.fillStyle=GRAY;rdraw(g,xa.title||'',PL+pw/2,H-12,13,'center');g.save();g.translate(16,PT+ph/2);g.rotate(-Math.PI/2);rdraw(g,ya.title||'',0,0,13,'center');g.restore();
+ // series, trendlines
+ const tls=[];const labels=[];
+ g.save();g.beginPath();g.rect(PL-4,PT-4,pw+8,ph+8);g.clip();
+ ch.series.forEach(s=>{const color='#'+(s.color||'4472C4'),xs=s.x,ys=s.y;
+  if(s.trend){const pts=xs.map((x,i)=>[x,ys[i]]).filter(p=>isFinite(p[0])&&isFinite(p[1]));const f=fit(pts.map(p=>p[0]),pts.map(p=>p[1]));
+   if(f){const lo=Math.min(...pts.map(p=>p[0])),hi=Math.max(...pts.map(p=>p[0]));const t=s.trend,tc='#'+(t.color||s.color||'4472C4');g.strokeStyle=tc;g.lineWidth=2;g.lineCap='butt';g.setLineDash(dashArr(t.dash||'sysdot',2));g.beginPath();g.moveTo(X(lo),Y(f.a*lo+f.b));g.lineTo(X(hi),Y(f.a*hi+f.b));g.stroke();g.setLineDash([]);
+    tls.push({name:t.name||'近似直線',color:tc,dash:t.dash||'sysdot'});if(t.label)labels.push({kind:'trend',px:X(hi),py:Y(f.a*hi+f.b),lab:t.label});}}
+  if(s.line){const lw=(s.width||28575)/12700*1.333;g.strokeStyle=color;g.lineWidth=lw;g.lineJoin='round';g.lineCap=(s.dash||'solid')==='solid'?'round':'butt';g.setLineDash(dashArr(s.dash||'solid',lw));g.beginPath();let on=false;
+   xs.forEach((x,i)=>{const y=ys[i];if(y==null||!isFinite(y)){on=false;return;}if(!on){g.moveTo(X(x),Y(y));on=true;}else g.lineTo(X(x),Y(y));});g.stroke();g.setLineDash([]);}
+  if(s.marker&&s.marker!=='none')xs.forEach((x,i)=>{if(isFinite(ys[i]))marker(g,s.marker,X(x),Y(ys[i]),s.msize||7,color);});
+  (s.labels||[]).forEach(L=>{if(isFinite(ys[L.idx]))labels.push({kind:'data',px:X(xs[L.idx]),py:Y(ys[L.idx]),lab:L});});});
+ g.restore();
+ // trendline / data labels: Excel's default spot plus the stored offset (fractions of the chart)
+ for(const L of labels){const lines=String(L.lab.text).split('\n');const size=L.kind==='data'?14:13,lh=size*1.25;const w=Math.max(...lines.map(t=>rwidth(g,t,size)));
+  let bx,by;if(L.kind==='data'){bx=L.px+8+L.lab.x*W;by=L.py-lh/2+L.lab.y*H;}else{bx=L.px+4+L.lab.x*W;by=L.py-lines.length*lh-4+L.lab.y*H;}
+  bx=Math.min(Math.max(4,bx),W-w-6);by=Math.min(Math.max(4,by),H-lines.length*lh-4);   // Excel keeps labels inside the chart area
+  if(L.kind==='data'&&(Math.abs(L.lab.x)>0.02||Math.abs(L.lab.y)>0.02)){const tx=Math.min(Math.max(L.px,bx),bx+w),ty=Math.min(Math.max(L.py,by),by+lh);g.strokeStyle='#000';g.lineWidth=1;g.beginPath();g.moveTo(L.px,L.py);g.lineTo(tx,ty);g.stroke();}
+  g.fillStyle='#000';lines.forEach((t,i)=>rdraw(g,t,bx,by+(i+0.8)*lh,size,'left'));}
+ // legend: series first, then trendlines (Excel order)
+ let box=null;if(ch.legend!==false){const lg=ch.legend||{x:0.12,y:0.04,w:0.45,h:0.22};const entries=[...ch.series.map(s=>({name:s.name,color:'#'+(s.color||'4472C4'),line:!!s.line,dash:s.dash||'solid',width:s.width,marker:s.line?null:s.marker,msize:s.msize})),...tls.map(t=>({name:t.name,color:t.color,line:true,dash:t.dash,width:19050}))];
+  const rowH=18,x0=lg.x*W,y1=lg.y*H;let tw=0;entries.forEach((e,i)=>{const y=y1+8+i*rowH+rowH/2;if(e.line){const lw=(e.width||28575)/12700*1.333;g.strokeStyle=e.color;g.lineWidth=lw;g.lineCap='butt';g.setLineDash(dashArr(e.dash,lw));g.beginPath();g.moveTo(x0+4,y);g.lineTo(x0+28,y);g.stroke();g.setLineDash([]);}
+   else if(e.marker)marker(g,e.marker,x0+16,y,e.msize||7,e.color);g.fillStyle=GRAY;tw=Math.max(tw,rdraw(g,e.name,x0+34,y+4.5,13,'left'));});
+  box={x:x0,y:y1,w:Math.max(lg.w*W,tw+40),h:Math.max(lg.h*H,entries.length*rowH+12)};}
+ return {legend:box};}
+
+/* ---------- copy helpers ---------- */
+async function copyHTML(htmlStr,text){try{if(navigator.clipboard&&window.ClipboardItem){await navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([htmlStr],{type:'text/html'}),'text/plain':new Blob([text],{type:'text/plain'})})]);return true;}}catch(_){}
+ try{const d=document.createElement('div');d.contentEditable='true';d.style.cssText='position:fixed;left:-9999px;top:0';d.innerHTML=htmlStr;document.body.appendChild(d);const r=document.createRange();r.selectNodeContents(d);const s=getSelection();s.removeAllRanges();s.addRange(r);const ok=document.execCommand('copy');s.removeAllRanges();d.remove();return ok;}catch(_){return false;}}
+function tableHTML(t,forWord){const sp=t.spans||t.head.map(()=>1);const n=t.rows.length;const cell=(v,tag,i,j,extra='')=>{const last=tag==='td'&&i===n-1;
+  const st=forWord?`style="font-family:'游明朝','Yu Mincho',serif;font-size:10.5pt;text-align:center;padding:1pt 9pt;${tag==='th'?'border-top:1.5pt solid #000;border-bottom:.75pt solid #000;font-weight:normal;':''}${last?'border-bottom:1.5pt solid #000;':''}"`:(last?'class="last"':'');
+  return `<${tag} ${st}${sp[j]>1?` colspan="${sp[j]}"`:''}${extra}>${html(v)}</${tag}>`;};
+ const rows=t.rows.map((r,i)=>'<tr>'+r.map((v,j)=>{if(t.vmerge&&j===0){if(i%t.vmerge)return '';return cell(v,'td',i+t.vmerge-1,j,` rowspan="${t.vmerge}"`);}return cell(v,'td',i,j);}).join('')+'</tr>').join('');
+ const capSt=forWord?` style="font-family:'游明朝','Yu Mincho',serif;font-size:10.5pt;text-align:center;margin:0 0 2pt"`:'';
+ const noteSt=forWord?` style="font-family:'游明朝','Yu Mincho',serif;font-size:9pt;margin:2pt 0 0"`:'';
+ return `<p class="cap"${capSt}>${html(t.caption)}</p><table${forWord?` style="border-collapse:collapse;margin:0 auto"`:''}><thead><tr>${t.head.map((h,j)=>cell(h,'th',0,j)).join('')}</tr></thead><tbody>${rows}</tbody></table>${t.note?`<p class="note"${noteSt}>${html(t.note)}</p>`:''}`;}
+const tableTSV=t=>[plain(t.caption),t.head.map(plain).join('\t'),...t.rows.map(r=>r.map(plain).join('\t')),t.note?plain(t.note):''].join('\n');
+
+/* ---------- rendering the list ---------- */
+const OV={};   // legend positions moved by the user, per tab and figure
+/* automatic legend placement: try the four inside corners (and top-centre) of the plot area and take the one that covers the
+   fewest curve points / markers / labels; the box is sized to its text. Runs in the browser before both preview and Excel export. */
+function autoPlace(it){const ch=it.chart.ch;if(!ch.legend)return;const {W,H}=chartSize(it.sheet,it.chart);const g=document.createElement('canvas').getContext('2d');
+ const xa=ch.x,ya=ch.y;const yl=Math.max(...[ya.min,ya.max,ya.min+ya.major].map(v=>rwidth(g,fmtNum(v,ya.fmt),12)));const PL=Math.round(yl+40),PR=16,PT=14,PB=52,pw=W-PL-PR,ph=H-PT-PB;
+ const X=v=>PL+(v-xa.min)/(xa.max-xa.min)*pw,Y=v=>PT+ph-(v-ya.min)/(ya.max-ya.min)*ph;
+ const names=[...ch.series.map(s=>s.name),...ch.series.filter(s=>s.trend).map(s=>s.trend.name||'近似直線')];
+ const w=Math.max(...names.map(n=>rwidth(g,n,13)))+44,h=names.length*18+14;
+ const pts=[];ch.series.forEach(s=>{const n=s.x.length,step=Math.max(1,Math.floor(n/150));for(let i=0;i<n;i+=step){const y=s.y[i];if(y!=null&&isFinite(y))pts.push([X(s.x[i]),Y(y),s.line?1:4]);}
+  if(s.trend){const xs=s.x.filter((x,i)=>isFinite(s.y[i])),f=fit(xs,s.y.filter(v=>isFinite(v)));if(f){const lo=Math.min(...xs),hi=Math.max(...xs);for(let k=0;k<=120;k++){const x=lo+(hi-lo)*k/120;pts.push([X(x),Y(f.a*x+f.b),1]);}
+   if(s.trend.label){const lx=X(hi)+4+s.trend.label.x*W,ly=Y(f.a*hi+f.b)-30+s.trend.label.y*H;for(let k=0;k<=8;k++)for(let j=0;j<=2;j++)pts.push([lx+k*22,ly+j*14,3]);}}}
+  (s.labels||[]).forEach(L=>{const lx=X(s.x[L.idx])+8+L.x*W,ly=Y(s.y[L.idx])+L.y*H;for(let k=0;k<=5;k++)pts.push([lx+k*18,ly,3]);});});
+ const cand=[[PL+8,PT+6],[PL+pw-w-8,PT+6],[PL+(pw-w)/2,PT+6],[PL+8,PT+ph-h-6],[PL+pw-w-8,PT+ph-h-6]];
+ let best=null;cand.forEach(([x,y],i)=>{let sc=i*0.01;for(const [px,py,wt] of pts)if(px>=x-6&&px<=x+w+6&&py>=y-6&&py<=y+h+6)sc+=wt;if(!best||sc<best.sc)best={sc,x,y};});
+ Object.assign(ch.legend,{x:+(best.x/W).toFixed(4),y:+(best.y/H).toFixed(4),w:+Math.min(0.9,w*1.08/W).toFixed(4),h:+Math.min(0.9,h/H).toFixed(4)});
+ // trendline equations: put each one in the emptiest spot of the plot (not on the curves, the legend or another equation), preferring spots near its own line
+ const boxes=[[best.x,best.y,w,h]];const curve=pts.filter(p=>p[2]!==3);
+ ch.series.forEach(s=>{const L=s.trend&&s.trend.label;if(!L)return;const xs=s.x.filter((x,i)=>isFinite(s.y[i])),f=fit(xs,s.y.filter(v=>isFinite(v)));if(!f)return;const hi=Math.max(...xs),ax=X(hi),ay=Y(f.a*hi+f.b);
+  const lines=String(L.text).split('\n'),lw=Math.max(...lines.map(t=>rwidth(g,t,13)))+4,lh=lines.length*16.25+4;let bb=null;
+  for(let i=0;i<=12;i++)for(let j=0;j<=10;j++){const bx=PL+6+(pw-lw-12)*i/12,by=PT+4+(ph-lh-8)*j/10;let sc=0;
+   for(const [px,py] of curve)if(px>=bx-8&&px<=bx+lw+8&&py>=by-8&&py<=by+lh+8)sc+=3;
+   for(const [qx,qy,qw,qh] of boxes){const ox=Math.max(0,Math.min(bx+lw,qx+qw)-Math.max(bx,qx)),oy=Math.max(0,Math.min(by+lh,qy+qh)-Math.max(by,qy));sc+=ox*oy/40;}
+   const cx=bx+lw/2,cy=by+lh/2,line=Math.abs(f.a*((cx-PL)/pw*(xa.max-xa.min)+xa.min)+f.b-((PT+ph-cy)/ph*(ya.max-ya.min)+ya.min))/(ya.max-ya.min)*ph;sc+=line/60+Math.hypot(cx-ax,cy-ay)/400;
+   if(!bb||sc<bb.sc)bb={sc,bx,by};}
+  boxes.push([bb.bx,bb.by,lw,lh]);L.x=+((bb.bx-(ax+4))/W).toFixed(4);L.y=+((bb.by-(ay-lines.length*16.25-4))/H).toFixed(4);});}
+function applyOverrides(tab,o){if(!o||!o.report)return;let k=0;for(const it of o.report)if(it.type==='fig'){const ov=(OV[tab]||{})[k++];if(!it.chart.ch.legend)continue;autoPlace(it);if(ov)Object.assign(it.chart.ch.legend,ov);}}
+let toast=null;
+function say(el,msg){el.textContent=msg;clearTimeout(el._t);el._t=setTimeout(()=>{el.textContent='';},2600);}
+function save(name,blob){const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);}
+function figCanvas(it,scale){const {W,H}=chartSize(it.sheet,it.chart);const c=document.createElement('canvas');c.width=W*scale;c.height=H*scale;const g=c.getContext('2d');g.scale(scale,scale);draw(g,it.chart.ch,W,H);return c;}
+function render(box,tab,o,rerender){box.innerHTML='';if(!o||!o.report){box.innerHTML='<p class="hint">入力がそろうと、ここにレポートの表と図が表示されます。</p>';return;}
+ let fi=0;for(const it of o.report){const card=document.createElement('div');card.className='rep-item';
+  if(it.type==='table'){card.innerHTML=`<div class="rep-tbl">${tableHTML(it,false)}</div><div class="rep-act"><button class="btn small" type="button">表をコピー（Wordに貼り付け）</button><span class="rep-msg" role="status"></span></div>`;
+   card.querySelector('button').addEventListener('click',async()=>{const ok=await copyHTML(tableHTML(it,true),tableTSV(it));say(card.querySelector('.rep-msg'),ok?'コピーしました。Wordで貼り付けてください。':'この環境ではコピーできませんでした。');});}
+  else{const k=fi++;const {W,H}=chartSize(it.sheet,it.chart);card.innerHTML=`<div class="rep-fig"><canvas aria-label="${esc(plain(it.caption))}"></canvas></div><p class="cap">${html(it.caption)}</p><div class="rep-act"><button class="btn small" type="button" data-a="png">PNGで保存</button><button class="btn small" type="button" data-a="copy">画像をコピー</button><button class="btn small" type="button" data-a="reset" hidden>凡例を元の位置に</button><span class="rep-msg" role="status"></span></div>`;
+   const cv=card.querySelector('canvas'),msg=card.querySelector('.rep-msg'),resetBtn=card.querySelector('[data-a=reset]');
+   if((OV[tab]||{})[k])resetBtn.hidden=false;
+   const paint=()=>{const cw=cv.parentElement.clientWidth||W;const k2=cw<W*0.8?Math.max(0.85,Math.min(1,cw*1.3/W)):1;const lw=W*k2,lh=H*k2;const dpr=window.devicePixelRatio||1;const sc=cw/lw*dpr;
+    cv.width=Math.round(lw*sc);cv.height=Math.round(lh*sc);const g=cv.getContext('2d');g.setTransform(sc,0,0,sc,0,0);const r=draw(g,it.chart.ch,lw,lh);cv._box=r.legend;cv._L=[lw,lh];};
+   requestAnimationFrame(paint);cv._paint=paint;
+   // legend drag
+   let drag=null;const pos=e=>{const r=cv.getBoundingClientRect();return [(e.clientX-r.left)/r.width*cv._L[0],(e.clientY-r.top)/r.height*cv._L[1]];};
+   const onBox=p=>cv._box&&p[0]>=cv._box.x-4&&p[0]<=cv._box.x+cv._box.w+4&&p[1]>=cv._box.y-4&&p[1]<=cv._box.y+cv._box.h+4;
+   cv.addEventListener('touchstart',e=>{if(e.touches.length===1&&onBox(pos(e.touches[0])))e.preventDefault();},{passive:false});
+   cv.addEventListener('pointerdown',e=>{const p=pos(e);if(!onBox(p))return;drag={dx:p[0]-cv._box.x,dy:p[1]-cv._box.y};cv.setPointerCapture(e.pointerId);});
+   cv.addEventListener('pointermove',e=>{const p=pos(e);if(!drag){cv.style.cursor=onBox(p)?'move':'default';return;}const [lw,lh]=cv._L,lg=it.chart.ch.legend;
+    const x=Math.min(Math.max(0,(p[0]-drag.dx)/lw),1-Math.min(lg.w,0.95)),y=Math.min(Math.max(0,(p[1]-drag.dy)/lh),1-Math.min(lg.h,0.95));lg.x=+x.toFixed(4);lg.y=+y.toFixed(4);(OV[tab]=OV[tab]||{})[k]={x:lg.x,y:lg.y};resetBtn.hidden=false;paint();});
+   const end=()=>{drag=null;};cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
+   resetBtn.addEventListener('click',()=>{if(OV[tab])delete OV[tab][k];rerender();});
+   card.querySelector('[data-a=png]').addEventListener('click',()=>{figCanvas(it,3).toBlob(b=>{save(plain(it.caption).split(/\s|　/)[0]+'.png',b);say(msg,'PNGを保存しました。');},'image/png');});
+   card.querySelector('[data-a=copy]').addEventListener('click',async()=>{try{const p=new Promise(res=>figCanvas(it,3).toBlob(res,'image/png'));await navigator.clipboard.write([new ClipboardItem({'image/png':p})]);say(msg,'コピーしました。Wordで貼り付けてください。');}catch(_){say(msg,'この環境では画像のコピーができません。PNGで保存してください。');}});}
+  box.appendChild(card);}}
+window.addEventListener('resize',()=>document.querySelectorAll('.rep-fig canvas').forEach(c=>c._paint&&c._paint()));
+return {render,applyOverrides,draw,chartSize};})();
 
 </script>
 <script>
@@ -523,37 +689,6 @@ const sciTxt=v=>supify(sci(v));
 const range=s=>{const m=String(s).match(/(-?\d+(?:\.\d+)?)\s*[-–〜~,]\s*(-?\d+(?:\.\d+)?)/);return m?[+m[1],+m[2]].sort((a,b)=>a-b):null;};
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const state={tab:'colorimetry',sample:{colorimetry:true,btb:true,oscillation:true},c:{spec:[null,null]},b:{files:[]},o:{rows:[]}};
-
-/* ---------------- tiny canvas plotter ---------------- */
-function nice(lo,hi,n=5){const span=hi-lo||1;const step0=span/n;const mag=10**Math.floor(Math.log10(step0));const st=[1,2,2.5,5,10].map(k=>k*mag).find(s=>s>=step0)||mag*10;return {lo:Math.floor(lo/st)*st,hi:Math.ceil(hi/st)*st,st};}
-function plot(cv,o){const dpr=window.devicePixelRatio||1;const W=cv.width,H=cv.height;if(!cv._w){cv._w=W;cv._h=H;}cv.width=cv._w*dpr;cv.height=cv._h*dpr;const g=cv.getContext('2d');g.scale(dpr,dpr);const w=cv._w,h=cv._h;
- g.clearRect(0,0,w,h);const ink=css('--ink'),mut=css('--muted'),grid=css('--grid');const L=64,R=16,B=48;
- g.font='12px '+css('--f-body');const named=o.series.filter(s=>s.name);const lay=[];{let lx=L,ly=14;for(const s of named){const tw=g.measureText(s.name).width+30;if(lx+tw>w-R&&lx>L){lx=L;ly+=17;}lay.push([s,lx,ly]);lx+=tw+8;}}
- const T=named.length?(lay.length?lay[lay.length-1][2]:0)+14:18;
- const xs=o.series.flatMap(s=>s.x).filter(isFinite),ys=o.series.flatMap(s=>s.y).filter(isFinite);if(!xs.length){g.fillStyle=mut;g.font='13px '+css('--f-body');g.fillText(o.empty||'データがありません',L,h/2);return;}
- let xl=o.xmin??Math.min(...xs),xh=o.xmax??Math.max(...xs),yl=o.ymin??Math.min(...ys),yh=o.ymax??Math.max(...ys);if(o.y0)yl=Math.min(0,yl);
- const nx=nice(xl,xh),ny=nice(yl,yh);if(o.xmin==null){xl=nx.lo;}if(o.xmax==null){xh=nx.hi;}yl=ny.lo;yh=ny.hi;
- const X=v=>L+(v-xl)/(xh-xl)*(w-L-R),Y=v=>h-B-(v-yl)/(yh-yl)*(h-T-B);
- g.font='11px '+css('--f-mono');g.lineWidth=1;g.strokeStyle=grid;g.fillStyle=mut;g.textAlign='center';
- const nxx=nice(xl,xh);for(let v=nxx.lo;v<=xh+1e-9;v+=nxx.st){if(v<xl-1e-9)continue;const x=X(v);g.beginPath();g.moveTo(x,T);g.lineTo(x,h-B);g.stroke();g.fillText(+v.toFixed(6)+'',x,h-B+15);}
- g.textAlign='right';for(let v=ny.lo;v<=yh+1e-9;v+=ny.st){const y=Y(v);g.beginPath();g.moveTo(L,y);g.lineTo(w-R,y);g.stroke();g.fillText(+v.toFixed(6)+'',L-6,y+4);}
- g.strokeStyle=mut;g.beginPath();g.moveTo(L,T);g.lineTo(L,h-B);g.lineTo(w-R,h-B);g.stroke();
- g.fillStyle=ink;g.font='12px '+css('--f-body');g.textAlign='center';g.fillText(o.xlab||'',L+(w-L-R)/2,h-10);g.save();g.translate(14,T+(h-T-B)/2);g.rotate(-Math.PI/2);g.fillText(o.ylab||'',0,0);g.restore();
- g.save();g.beginPath();g.rect(L,T,w-L-R,h-T-B);g.clip();
- for(const f of (o.fits||[])){g.strokeStyle=f.color;g.setLineDash([6,4]);g.lineWidth=1.4;g.beginPath();g.moveTo(X(xl),Y(f.a*xl+f.b));g.lineTo(X(xh),Y(f.a*xh+f.b));g.stroke();g.setLineDash([]);}
- for(const s of o.series){g.strokeStyle=s.color;g.fillStyle=s.color;g.lineWidth=1.6;g.setLineDash(s.dash||[]);
-  if(s.mode==='line'){g.beginPath();let st=false;s.x.forEach((x,i)=>{const y=s.y[i];if(!isFinite(y)||!isFinite(x)){st=false;return;}if(!st){g.moveTo(X(x),Y(y));st=true;}else g.lineTo(X(x),Y(y));});g.stroke();}
-  g.setLineDash([]);if(s.mode==='pts')s.x.forEach((x,i)=>{const y=s.y[i];if(!isFinite(y))return;const px=X(x),py=Y(y);g.beginPath();
-   if(s.marker==='x'){g.lineWidth=2;g.moveTo(px-5,py-5);g.lineTo(px+5,py+5);g.moveTo(px+5,py-5);g.lineTo(px-5,py+5);g.stroke();}
-   else if(s.marker==='sq'){g.rect(px-4.5,py-4.5,9,9);g.fill();}else if(s.marker==='tri'){g.moveTo(px,py-6);g.lineTo(px+5.5,py+4);g.lineTo(px-5.5,py+4);g.closePath();g.fill();}
-   else if(s.marker==='dia'){g.moveTo(px,py-7);g.lineTo(px+6,py);g.lineTo(px,py+7);g.lineTo(px-6,py);g.closePath();g.fill();}else{g.arc(px,py,4.5,0,7);g.fill();}});}
- g.restore();
- // legend (above the plot area)
- g.font='12px '+css('--f-body');g.textAlign='left';
- for(const [s,lx,ly] of lay){g.strokeStyle=s.color;g.fillStyle=s.color;g.setLineDash(s.dash||[]);g.lineWidth=2;
-  if(s.mode==='line'){g.beginPath();g.moveTo(lx,ly-4);g.lineTo(lx+18,ly-4);g.stroke();}else{g.beginPath();g.arc(lx+9,ly-4,4,0,7);g.fill();}
-  g.setLineDash([]);g.fillStyle=ink;g.fillText(s.name,lx+24,ly);}}
-const COLORS=()=>[css('--c1'),css('--c2'),css('--c3'),css('--c4'),'#7B5EA7','#5B8C3A','#A0522D','#8C8C8C'];
 
 /* ---------------- sample data (fictional) ---------------- */
 const gauss=(x,m,s)=>Math.exp(-0.5*((x-m)/s)**2);
@@ -583,16 +718,13 @@ function cCheck(p){const e=[];if(!(p.mass>0))e.push('硫酸銅五水和物の質
  if(p.V.length!==6||p.V.some(v=>!isFinite(v)))e.push('No.1〜6 の標準溶液の量は「0, 1, 2, 3, 4, 5」のように6つ入力してください。');
  if(p.A.some(v=>!isFinite(v)))e.push('No.1〜6 の吸光度をすべて入力してください。');if(p.use.filter(Boolean).length<2)e.push('検量線には2点以上が必要です。');if(!isFinite(p.Aunk))e.push('No.7 の吸光度を入力してください。');return e;}
 function cSub(p){for(let i=0;i<6;i++){const el=$('c-sub'+i);if(el)el.textContent=isFinite(p.V[i])?`（${p.V[i].toFixed(2)} mL）`:'';}}
-function cUpdate(){const p=cRead();cSub(p);const e=cCheck(p),m=$('c-msg'),res=$('c-res');if(e.length){m.className='msg err';m.textContent=e.join(' ');res.innerHTML='';plot($('c-cv'),{series:[],empty:'入力を完成させるとグラフが表示されます'});$('c-cv2').hidden=true;return null;}
+function cUpdate(){const p=cRead();cSub(p);const e=cCheck(p),m=$('c-msg'),res=$('c-res');if(e.length){m.className='msg err';m.textContent=e.join(' ');res.innerHTML='';REPORT.render($('c-rep'),'colorimetry',null);return null;}
  const o=LAB.colorimetry(p),r=o.res;m.className='msg';m.textContent='';
  const kv=[['検量線（全点）の傾き',`${fmt(r.fall.a,1)} L mol⁻¹`],['もとの硫酸銅溶液の濃度',fmt(r.orig,3)+' mol L⁻¹']];
  if(r.fuse)kv.push([`No.${r.ex.map(x=>x.no).join(', ')} を除くと（図3）`,fmt(r.orig2,3)+' mol L⁻¹']);
  r.spec.forEach(s=>{if(s.pk)kv.push([s.label.replace('させた比色用標準溶液','後').replace('させていない硫酸銅溶液','前')+'のピーク',`${Math.round(s.pk.w)} nm, ε = ${fmt(s.eps,1)}`]);});
  res.innerHTML=kv.map(([k,v])=>`<div class="kv"><span>${k}</span><b>${v}</b></div>`).join('');
- const cs=COLORS();const ser=[{name:'標準溶液・対照液',mode:'pts',x:r.used.map(x=>x.C*1000),y:r.used.map(x=>x.A),color:'#4472C4'}];if(r.ex.length)ser.push({name:'除いた点（実測値）',mode:'pts',x:r.ex.map(x=>x.C*1000),y:r.ex.map(x=>x.A),color:'#A5A5A5'});ser.push({name:'濃度未知試料',mode:'pts',x:[r.Cu*1000],y:[p.Aunk],color:'#ED7D31'});
- const fits=[{a:r.fall.a/1000,b:r.fall.b,color:'#4472C4'}];if(r.fuse)fits.push({a:r.fuse.a/1000,b:r.fuse.b,color:'#A5A5A5'});
- plot($('c-cv'),{series:ser,fits,xlab:'C / 10⁻³ mol L⁻¹',ylab:'A',xmin:0,y0:true});
- const c2=$('c-cv2');if(p.spectra.length){c2.hidden=false;plot(c2,{series:p.spectra.map((s,i)=>({name:s.label,mode:'line',x:s.data.map(q=>q[0]),y:s.data.map(q=>q[1]),color:i?'#ED7D31':'#4472C4',dash:i?[6,4]:[]})),xlab:'λ / nm',ylab:'A'});}else c2.hidden=true;
+ REPORT.applyOverrides('colorimetry',o);REPORT.render($('c-rep'),'colorimetry',o,update);
  return o;}
 
 /* ---------------- BTB ---------------- */
@@ -612,7 +744,7 @@ function bRead(){const p={stock:num($('b-stock').value),aliq:num($('b-aliq').val
 function bCheck(p){const e=[];if(p.samples.length<3)e.push('pHの異なるスペクトルを3つ以上読み込んでください（両端のpHと、その間の溶液）。');else if(p.samples.some(s=>!isFinite(s.pH)))e.push('すべてのファイルにpHを入力してください。');
  if(!(p.stock>0&&p.aliq>0&&p.flask>0&&p.l>0))e.push('テキストの条件に正の数を入力してください。');if(!isFinite(p.w1)||!isFinite(p.w2))e.push('解析波長を入力してください。');if(!p.r1||!p.r2||!p.ri)e.push('範囲は「375-480」のように入力してください。');return e;}
 function bUpdate(){const p=bRead(),e=bCheck(p),m=$('b-msg'),res=$('b-res');
- if(e.length){m.className='msg err';m.textContent=e.join(' ');res.innerHTML='';plot($('b-cv'),{series:[],empty:'スペクトルを読み込むとグラフが表示されます'});plot($('b-cv2'),{series:[],empty:''});return null;}
+ if(e.length){m.className='msg err';m.textContent=e.join(' ');res.innerHTML='';REPORT.render($('b-rep'),'btb',null);return null;}
  const o=LAB.btb(p),r=o.res;const notes=[];
  const bad=r.rowsA.slice(1,-1).filter(x=>!isFinite(x.y1)||!isFinite(x.y2));if(bad.length)notes.push('pH '+bad.map(x=>x.pH.toFixed(2)).join('、')+' は log 値が求められない波長があります（表3では「解なし」）。');
  if(r.steps.length)notes.push('約 '+r.steps.join(' nm、約 ')+' nm に装置の段差があります。');
@@ -622,10 +754,7 @@ function bUpdate(){const p=bRead(),e=bCheck(p),m=$('b-msg'),res=$('b-res');
  m.className=notes.length?'msg warn':'msg';m.textContent=notes.join(' ');
  const pk=f=>f?fmt(-f.b/f.a,2):'—';
  res.innerHTML=[[`pKa（${p.w1} nm / ${p.w2} nm）`,pk(r.f1)+' / '+pk(r.f2)],['pKa の平均',fmt(r.pkm,2)],['等吸収点',r.iso?r.iso.w+' nm':'—']].map(([k,v])=>`<div class="kv"><span>${k}</span><b>${v}</b></div>`).join('');
- plot($('b-cv'),{series:r.S.map(s=>({name:'pH '+s.pH.toFixed(2),mode:'line',x:s.data.map(q=>q[0]),y:s.data.map(q=>q[1]),color:'#'+LAB.btbColor(s.pH)})),xlab:'λ / nm',ylab:'A'});
- const ser=[],fits=[];if(r.u1.length){ser.push({name:p.w1+' nm',mode:'pts',x:r.u1.map(x=>x.pH),y:r.u1.map(x=>x.y1),color:'#ED7D31'});fits.push({...r.f1,color:'#ED7D31'});}
- if(r.u2.length){ser.push({name:p.w2+' nm',mode:'pts',marker:'tri',x:r.u2.map(x=>x.pH),y:r.u2.map(x=>x.y2),color:'#4472C4'});fits.push({...r.f2,color:'#4472C4'});}
- plot($('b-cv2'),{series:ser,fits:fits.filter(f=>isFinite(f.a)),xlab:'pH',ylab:'log₁₀{(A−A₁)/(A₂−A)}',empty:'計算に使える点がありません'});
+ REPORT.applyOverrides('btb',o);REPORT.render($('b-rep'),'btb',o,update);
  return o;}
 
 /* ---------------- 振動反応 ---------------- */
@@ -638,10 +767,10 @@ function oRows(){const n=Math.max(3,Math.min(30,parseInt($('o-n').value)||11));$
 function oRead(){const n=Math.max(3,Math.min(30,parseInt($('o-n').value)||11));return {n,temps:state.o.rows.map(r=>({t:num(r.t),times:Array.from({length:n},(_,i)=>LAB.parseTime(r.times[i]))}))};}
 function oCheck(p){const e=[];if(p.temps.length<2)e.push('温度は2つ以上必要です。');
  p.temps.forEach(t=>{if(!isFinite(t.t))e.push('温度を入力してください。');const bad=t.times.findIndex(v=>!isFinite(v));if(bad>=0)e.push(`${isFinite(t.t)?t.t+' ℃':'温度未入力の行'}の${bad+1}回目の時間を読み取れません。`);else if(t.times.some((v,i)=>i&&v<=t.times[i-1]))e.push(`${t.t} ℃の時間が増えていない箇所があります。`);});return [...new Set(e)];}
-function oUpdate(){const p=oRead(),e=oCheck(p),m=$('o-msg'),res=$('o-res');if(e.length){m.className='msg err';m.textContent=e.join(' ');res.innerHTML='';plot($('o-cv'),{series:[],empty:'すべての時間を入力するとグラフが表示されます'});return null;}
- const o=LAB.oscillation(p),r=o.res,cs=COLORS();m.className='msg';m.textContent='';
+function oUpdate(){const p=oRead(),e=oCheck(p),m=$('o-msg'),res=$('o-res');if(e.length){m.className='msg err';m.textContent=e.join(' ');res.innerHTML='';REPORT.render($('o-rep'),'oscillation',null);return null;}
+ const o=LAB.oscillation(p),r=o.res;m.className='msg';m.textContent='';
  res.innerHTML=[['Ea（誘導期）',fmt(r.Ea.ind,1)+' ± '+fmt(r.Ea.dind,1)+' kJ mol⁻¹'],['Ea（振動期）',fmt(r.Ea.osc,1)+' ± '+fmt(r.Ea.dosc,1)+' kJ mol⁻¹']].map(([k,v])=>`<div class="kv"><span>${k}</span><b>${v}</b></div>`).join('');
- plot($('o-cv'),{series:[{name:'誘導期',mode:'pts',marker:'sq',x:r.rows.map(x=>x.x),y:r.rows.map(x=>x.yi),color:'#ED7D31'},{name:'振動期',mode:'pts',x:r.rows.map(x=>x.x),y:r.rows.map(x=>x.yo),color:'#4472C4'}],fits:[{...r.fi,color:'#ED7D31'},{...r.fo,color:'#4472C4'}],xlab:'T⁻¹ / 10⁻³ K⁻¹',ylab:'ln (1/P)'});
+ REPORT.applyOverrides('oscillation',o);REPORT.render($('o-rep'),'oscillation',o,update);
  return o;}
 
 /* ---------------- shell ---------------- */

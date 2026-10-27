@@ -26,18 +26,20 @@ function parseTime(s){s=String(s??'').trim().replace(/\s+/g,'');if(!s)return NaN
 function btbColor(pH){const f=1/(1+10**(7.1-pH));const st=[[0,[214,170,0]],[0.5,[56,150,72]],[1,[33,64,160]]];let a=st[0],b=st[2];if(f<=0.5){a=st[0];b=st[1];}else{a=st[1];b=st[2];}const t=(f-a[0])/(b[0]-a[0]);
  return a[1].map((v,i)=>Math.round(v+(b[1][i]-v)*t).toString(16).padStart(2,'0')).join('').toUpperCase();}
 function niceAxis(lo,hi,step){return {min:+(Math.floor(lo/step+1e-9)*step).toFixed(6),max:+(Math.ceil(hi/step-1e-9)*step).toFixed(6),major:step};}
+/* ---------- what goes on the report sheet, in order (used for the on-screen preview / copy / PNG) ---------- */
+let REP=[];
 /* ---------- report-style table (three-line, 游明朝, centred) ---------- */
-function table(sh,r,c,caption,head,rows,note,spans){const sp=spans||head.map(()=>1);const W=sp.reduce((a,b)=>a+b,0);const pos=sp.map((_,j)=>c+sp.slice(0,j).reduce((a,b)=>a+b,0));
+function table(sh,r,c,caption,head,rows,note,spans){REP.push({type:'table',r,caption,head,rows,note,spans});const sp=spans||head.map(()=>1);const W=sp.reduce((a,b)=>a+b,0);const pos=sp.map((_,j)=>c+sp.slice(0,j).reduce((a,b)=>a+b,0));
  sh.set(r,c,{r:caption},ST.cap);if(W>1)sh.merge(r,c,r,c+W-1);
  const put=(rr,j,v,st)=>{sh.set(rr,pos[j],{r:String(v)},st);for(let k=1;k<sp[j];k++)sh.set(rr,pos[j]+k,'',st);if(sp[j]>1)sh.merge(rr,pos[j],rr,pos[j]+sp[j]-1);};
  head.forEach((h,j)=>put(r+1,j,h,ST.th));
  rows.forEach((row,i)=>row.forEach((v,j)=>put(r+2+i,j,v,i===rows.length-1?ST.tdl:ST.td)));
  let end=r+2+rows.length;if(note){sh.set(end,c,{r:note},ST.tn);end++;}return end+1;}
-function caption(sh,r,c,text,w){sh.set(r,c,{r:text},ST.cap);sh.merge(r,c,r,c+w-1);}
+function caption(sh,r,c,text,w){sh.set(r,c,{r:text},ST.cap);sh.merge(r,c,r,c+w-1);const ch=sh.charts[sh.charts.length-1];if(ch&&!ch.caption){ch.caption=text;REP.push({type:'fig',r:ch.r,caption:text,chart:ch,sheet:sh});}}
 const XFMT=d=>d<=0?'0':'0.'+'0'.repeat(d);
 
 /* ================== 比色分析 ================== */
-function colorimetry(p){
+function colorimetry(p){REP=[];
  const rep=new Sheet('レポート用');rep.grid=false;const cs=new Sheet('計算');
  [6,20,12,16,16,20,10,10].forEach((w,i)=>rep.width(i,w));
  const n=p.mass/p.M,cstd=n/(p.vstd/1000),cstdR=roundSig(cstd,3);
@@ -98,10 +100,10 @@ function colorimetry(p){
    {name:`No.${nm}（実測値）`,x:ex.map(x=>x.C*1000),y:ex.map(x=>x.A),xRef:aref('計算',EB+1,2,EB+ex.length,2),yRef:aref('計算',EB+1,3,EB+ex.length,3),marker:'circle',color:OF.gray}];
   rep.chart({series:ser,x:{title:`<i>C</i> / 10^{${M}3} mol L^{${M}1}`,...xa2},y:{title:'<i>A</i>',min:Math.min(fuse.b,0)<0?-0.1:0,max:ya2.max,major:0.1,fmt:'0.0'},legend:{x:0.1,y:0.04,w:0.55,h:0.3}},r,0,r+figH,figW);r+=figH;
   caption(rep,r,0,`図3　No.${nm} を除いた検量線`,figW);r+=2;}
- return {sheets:[rep,cs],res:{n,cstd,fall,fuse,Cu,orig,Cu2,orig2:Cu2*p.vflask/p.vunk,rows,used,ex,spec:specInfo.map(x=>({label:x.s.label,pk:x.pk,eps:x.pk?x.pk.a/(Cs*p.l):NaN}))}};}
+ return {sheets:[rep,cs],report:REP,res:{n,cstd,fall,fuse,Cu,orig,Cu2,orig2:Cu2*p.vflask/p.vunk,rows,used,ex,spec:specInfo.map(x=>({label:x.s.label,pk:x.pk,eps:x.pk?x.pk.a/(Cs*p.l):NaN}))}};}
 
 /* ================== BTB ================== */
-function btb(p){
+function btb(p){REP=[];
  const S=[...p.samples].sort((a,b)=>a.pH-b.pH);const N=S.length;const C0=p.stock*1e-3*p.aliq/p.flask;const l=p.l;
  const grid=[...new Set(S.flatMap(s=>s.data.map(q=>q[0])))].sort((a,b)=>a-b);const maps=S.map(s=>new Map(s.data.map(q=>[q[0],q[1]])));
  const rep=new Sheet('レポート用');rep.grid=false;const cs=new Sheet('計算');
@@ -162,10 +164,10 @@ function btb(p){
   rep.chart({series:ser,x:{title:'pH',...niceAxis(Math.min(...xs)-0.2,Math.max(...xs)+0.2,0.25),fmt:'0.00'},y:{title:LOG,...niceAxis(Math.min(...ys)-0.2,Math.max(...ys)+0.2,0.25),fmt:'0.00'},legend:{x:0.1,y:0.04,w:0.36,h:0.26}},r,0,r+figH,figW);r+=figH;
   caption(rep,r,0,'図3　BTB の吸光度と pH の関係',figW);r+=2;}
  r=table(rep,r,0,'表4　近似直線の傾き・切片と求めた p<i>K</i>_{a}',['波長','傾き','切片','<i>R</i>^{2}','p<i>K</i>_{a}'],[[`${p.w1} nm`,f1?fx(f1.a,3):'—',f1?fx(f1.b,3):'—',f1?f1.r2.toFixed(3):'—',isFinite(pk1)?pk1.toFixed(2):'—'],[`${p.w2} nm`,f2?fx(f2.a,3):'—',f2?fx(f2.b,3):'—',f2?f2.r2.toFixed(3):'—',isFinite(pk2)?pk2.toFixed(2):'—']]);
- return {sheets:[rep,cs],res:{C0,rowsA,f1,f2,pkm,u1,u2,peaks,iso,steps:stp,base,S,grid,maps}};}
+ return {sheets:[rep,cs],report:REP,res:{C0,rowsA,f1,f2,pkm,u1,u2,peaks,iso,steps:stp,base,S,grid,maps}};}
 
 /* ================== 振動反応 ================== */
-function oscillation(p){const n=p.n;
+function oscillation(p){REP=[];const n=p.n;
  const rep=new Sheet('レポート用');rep.grid=false;const cs=new Sheet('計算');
  const rows=p.temps.map(t=>{const ts=t.times;const Pind=ts[0],Posc=(ts[n-1]-ts[0])/(n-1),T=t.t+273.15;return {t:t.t,T,Pind,Posc,ts,x:1000/T,yi:Math.log(1/Pind),yo:Math.log(1/Posc)};});
  const fi=fit(rows.map(x=>x.x),rows.map(x=>x.yi)),fo=fit(rows.map(x=>x.x),rows.map(x=>x.yo));const R=8.314;
@@ -182,7 +184,7 @@ function oscillation(p){const n=p.n;
  rep.width(0,22).width(1,12);for(let c=2;c<2+n;c++)rep.width(c,7);
  let r=0;rep.set(r,0,'化学的振動反応：レポート用の表と図',ST.sub);r+=2;
  const t1=[];rows.forEach(x=>{t1.push([`${x.t} ℃`,'時間 / s',...x.ts.map(v=>String(Math.round(v)))]);t1.push(['','周期 / s',...x.ts.map((v,i)=>String(Math.round(i?v-x.ts[i-1]:v)))]);});
- const T1=r+2;r=table(rep,r,0,'表1　発色の回数と時間（時間は反応開始からの経過時間）',['温度','項目',...Array.from({length:n},(_,i)=>String(i+1))],t1,'※ 1回目の周期は誘導期 <i>P</i>_{ind} に等しい。');rows.forEach((_,k)=>{rep.set(T1+2*k,0,{r:`${rows[k].t} ℃`},ST.td);rep.set(T1+2*k+1,0,'',k===rows.length-1?ST.tdl:ST.td);rep.merge(T1+2*k,0,T1+2*k+1,0);});
+ const T1=r+2;r=table(rep,r,0,'表1　発色の回数と時間（時間は反応開始からの経過時間）',['温度','項目',...Array.from({length:n},(_,i)=>String(i+1))],t1,'※ 1回目の周期は誘導期 <i>P</i>_{ind} に等しい。');rows.forEach((_,k)=>{rep.set(T1+2*k,0,{r:`${rows[k].t} ℃`},ST.td);rep.set(T1+2*k+1,0,'',k===rows.length-1?ST.tdl:ST.td);rep.merge(T1+2*k,0,T1+2*k+1,0);});REP.find(x=>x.type==='table').vmerge=2;
  const W2=1+rows.length;
  r=table(rep,r,0,'表2　アーレニウスプロット用のデータ整理',['',...rows.map(x=>`${x.t} ℃`)],[
   [`<i>T</i>^{${M}1} / 10^{${M}3} K^{${M}1}`,...rows.map(x=>x.x.toFixed(3))],
@@ -196,6 +198,6 @@ function oscillation(p){const n=p.n;
   x:{title:`<i>T</i>^{${M}1} / 10^{${M}3} K^{${M}1}`,...niceAxis(Math.min(...xs)-0.015,Math.max(...xs)+0.015,0.02),fmt:'0.00'},y:{title:'ln (1/<i>P</i>)',...niceAxis(Math.min(...ys)-0.3,Math.max(...ys)+0.3,0.5),fmt:'0.0'},legend:{x:0.6,y:0.45,w:0.36,h:0.3}},r,0,r+figH,8);r+=figH;
  caption(rep,r,0,'図1　誘導期および振動期のアーレニウスプロット',8);r+=2;
  r=table(rep,r,0,'表3　誘導期および振動期の活性化エネルギー',['','傾き / K','<i>R</i>^{2}',`<i>E</i>_{a} / kJ mol^{${M}1}`],[['誘導期',sci(fi.a*1000,4),fi.r2.toFixed(3),`${Ea(fi).toFixed(1)} ± ${dEa(fi).toFixed(1)}`],['振動期',sci(fo.a*1000,4),fo.r2.toFixed(3),`${Ea(fo).toFixed(1)} ± ${dEa(fo).toFixed(1)}`]],null,[1,1,2,3]);
- return {sheets:[rep,cs],res:{rows,fi,fo,Ea:{ind:Ea(fi),osc:Ea(fo),dind:dEa(fi),dosc:dEa(fo)}}};}
+ return {sheets:[rep,cs],report:REP,res:{rows,fi,fo,Ea:{ind:Ea(fi),osc:Ea(fo),dind:dEa(fi),dosc:dEa(fo)}}};}
 return {colorimetry,btb,oscillation,parseSpectrum,parseTime,fit,peak,steps,btbColor};})();
 if(typeof module!=='undefined')module.exports=LAB;

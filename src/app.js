@@ -9,37 +9,6 @@ const range=s=>{const m=String(s).match(/(-?\d+(?:\.\d+)?)\s*[-–〜~,]\s*(-?\d
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 const state={tab:'colorimetry',sample:{colorimetry:true,btb:true,oscillation:true},c:{spec:[null,null]},b:{files:[]},o:{rows:[]}};
 
-/* ---------------- tiny canvas plotter ---------------- */
-function nice(lo,hi,n=5){const span=hi-lo||1;const step0=span/n;const mag=10**Math.floor(Math.log10(step0));const st=[1,2,2.5,5,10].map(k=>k*mag).find(s=>s>=step0)||mag*10;return {lo:Math.floor(lo/st)*st,hi:Math.ceil(hi/st)*st,st};}
-function plot(cv,o){const dpr=window.devicePixelRatio||1;const W=cv.width,H=cv.height;if(!cv._w){cv._w=W;cv._h=H;}cv.width=cv._w*dpr;cv.height=cv._h*dpr;const g=cv.getContext('2d');g.scale(dpr,dpr);const w=cv._w,h=cv._h;
- g.clearRect(0,0,w,h);const ink=css('--ink'),mut=css('--muted'),grid=css('--grid');const L=64,R=16,B=48;
- g.font='12px '+css('--f-body');const named=o.series.filter(s=>s.name);const lay=[];{let lx=L,ly=14;for(const s of named){const tw=g.measureText(s.name).width+30;if(lx+tw>w-R&&lx>L){lx=L;ly+=17;}lay.push([s,lx,ly]);lx+=tw+8;}}
- const T=named.length?(lay.length?lay[lay.length-1][2]:0)+14:18;
- const xs=o.series.flatMap(s=>s.x).filter(isFinite),ys=o.series.flatMap(s=>s.y).filter(isFinite);if(!xs.length){g.fillStyle=mut;g.font='13px '+css('--f-body');g.fillText(o.empty||'データがありません',L,h/2);return;}
- let xl=o.xmin??Math.min(...xs),xh=o.xmax??Math.max(...xs),yl=o.ymin??Math.min(...ys),yh=o.ymax??Math.max(...ys);if(o.y0)yl=Math.min(0,yl);
- const nx=nice(xl,xh),ny=nice(yl,yh);if(o.xmin==null){xl=nx.lo;}if(o.xmax==null){xh=nx.hi;}yl=ny.lo;yh=ny.hi;
- const X=v=>L+(v-xl)/(xh-xl)*(w-L-R),Y=v=>h-B-(v-yl)/(yh-yl)*(h-T-B);
- g.font='11px '+css('--f-mono');g.lineWidth=1;g.strokeStyle=grid;g.fillStyle=mut;g.textAlign='center';
- const nxx=nice(xl,xh);for(let v=nxx.lo;v<=xh+1e-9;v+=nxx.st){if(v<xl-1e-9)continue;const x=X(v);g.beginPath();g.moveTo(x,T);g.lineTo(x,h-B);g.stroke();g.fillText(+v.toFixed(6)+'',x,h-B+15);}
- g.textAlign='right';for(let v=ny.lo;v<=yh+1e-9;v+=ny.st){const y=Y(v);g.beginPath();g.moveTo(L,y);g.lineTo(w-R,y);g.stroke();g.fillText(+v.toFixed(6)+'',L-6,y+4);}
- g.strokeStyle=mut;g.beginPath();g.moveTo(L,T);g.lineTo(L,h-B);g.lineTo(w-R,h-B);g.stroke();
- g.fillStyle=ink;g.font='12px '+css('--f-body');g.textAlign='center';g.fillText(o.xlab||'',L+(w-L-R)/2,h-10);g.save();g.translate(14,T+(h-T-B)/2);g.rotate(-Math.PI/2);g.fillText(o.ylab||'',0,0);g.restore();
- g.save();g.beginPath();g.rect(L,T,w-L-R,h-T-B);g.clip();
- for(const f of (o.fits||[])){g.strokeStyle=f.color;g.setLineDash([6,4]);g.lineWidth=1.4;g.beginPath();g.moveTo(X(xl),Y(f.a*xl+f.b));g.lineTo(X(xh),Y(f.a*xh+f.b));g.stroke();g.setLineDash([]);}
- for(const s of o.series){g.strokeStyle=s.color;g.fillStyle=s.color;g.lineWidth=1.6;g.setLineDash(s.dash||[]);
-  if(s.mode==='line'){g.beginPath();let st=false;s.x.forEach((x,i)=>{const y=s.y[i];if(!isFinite(y)||!isFinite(x)){st=false;return;}if(!st){g.moveTo(X(x),Y(y));st=true;}else g.lineTo(X(x),Y(y));});g.stroke();}
-  g.setLineDash([]);if(s.mode==='pts')s.x.forEach((x,i)=>{const y=s.y[i];if(!isFinite(y))return;const px=X(x),py=Y(y);g.beginPath();
-   if(s.marker==='x'){g.lineWidth=2;g.moveTo(px-5,py-5);g.lineTo(px+5,py+5);g.moveTo(px+5,py-5);g.lineTo(px-5,py+5);g.stroke();}
-   else if(s.marker==='sq'){g.rect(px-4.5,py-4.5,9,9);g.fill();}else if(s.marker==='tri'){g.moveTo(px,py-6);g.lineTo(px+5.5,py+4);g.lineTo(px-5.5,py+4);g.closePath();g.fill();}
-   else if(s.marker==='dia'){g.moveTo(px,py-7);g.lineTo(px+6,py);g.lineTo(px,py+7);g.lineTo(px-6,py);g.closePath();g.fill();}else{g.arc(px,py,4.5,0,7);g.fill();}});}
- g.restore();
- // legend (above the plot area)
- g.font='12px '+css('--f-body');g.textAlign='left';
- for(const [s,lx,ly] of lay){g.strokeStyle=s.color;g.fillStyle=s.color;g.setLineDash(s.dash||[]);g.lineWidth=2;
-  if(s.mode==='line'){g.beginPath();g.moveTo(lx,ly-4);g.lineTo(lx+18,ly-4);g.stroke();}else{g.beginPath();g.arc(lx+9,ly-4,4,0,7);g.fill();}
-  g.setLineDash([]);g.fillStyle=ink;g.fillText(s.name,lx+24,ly);}}
-const COLORS=()=>[css('--c1'),css('--c2'),css('--c3'),css('--c4'),'#7B5EA7','#5B8C3A','#A0522D','#8C8C8C'];
-
 /* ---------------- sample data (fictional) ---------------- */
 const gauss=(x,m,s)=>Math.exp(-0.5*((x-m)/s)**2);
 function sampleCuSpectra(){const a=[],b=[];for(let w=400;w<=1000;w++){a.push([w,+(0.478*gauss(w,608,72)+0.018*gauss(w,455,38)-0.004).toFixed(6)]);b.push([w,+(0.092*gauss(w,790,90)+0.023).toFixed(6)]);}return [{label:'発色させた比色用標準溶液',data:a,name:'サンプル（架空）',lo:'400',hi:'1000',isSample:true},{label:'発色させていない硫酸銅溶液',data:b,name:'サンプル（架空）',lo:'400',hi:'1000',isSample:true}];}
@@ -68,16 +37,13 @@ function cCheck(p){const e=[];if(!(p.mass>0))e.push('硫酸銅五水和物の質
  if(p.V.length!==6||p.V.some(v=>!isFinite(v)))e.push('No.1〜6 の標準溶液の量は「0, 1, 2, 3, 4, 5」のように6つ入力してください。');
  if(p.A.some(v=>!isFinite(v)))e.push('No.1〜6 の吸光度をすべて入力してください。');if(p.use.filter(Boolean).length<2)e.push('検量線には2点以上が必要です。');if(!isFinite(p.Aunk))e.push('No.7 の吸光度を入力してください。');return e;}
 function cSub(p){for(let i=0;i<6;i++){const el=$('c-sub'+i);if(el)el.textContent=isFinite(p.V[i])?`（${p.V[i].toFixed(2)} mL）`:'';}}
-function cUpdate(){const p=cRead();cSub(p);const e=cCheck(p),m=$('c-msg'),res=$('c-res');if(e.length){m.className='msg err';m.textContent=e.join(' ');res.innerHTML='';plot($('c-cv'),{series:[],empty:'入力を完成させるとグラフが表示されます'});$('c-cv2').hidden=true;return null;}
+function cUpdate(){const p=cRead();cSub(p);const e=cCheck(p),m=$('c-msg'),res=$('c-res');if(e.length){m.className='msg err';m.textContent=e.join(' ');res.innerHTML='';REPORT.render($('c-rep'),'colorimetry',null);return null;}
  const o=LAB.colorimetry(p),r=o.res;m.className='msg';m.textContent='';
  const kv=[['検量線（全点）の傾き',`${fmt(r.fall.a,1)} L mol⁻¹`],['もとの硫酸銅溶液の濃度',fmt(r.orig,3)+' mol L⁻¹']];
  if(r.fuse)kv.push([`No.${r.ex.map(x=>x.no).join(', ')} を除くと（図3）`,fmt(r.orig2,3)+' mol L⁻¹']);
  r.spec.forEach(s=>{if(s.pk)kv.push([s.label.replace('させた比色用標準溶液','後').replace('させていない硫酸銅溶液','前')+'のピーク',`${Math.round(s.pk.w)} nm, ε = ${fmt(s.eps,1)}`]);});
  res.innerHTML=kv.map(([k,v])=>`<div class="kv"><span>${k}</span><b>${v}</b></div>`).join('');
- const cs=COLORS();const ser=[{name:'標準溶液・対照液',mode:'pts',x:r.used.map(x=>x.C*1000),y:r.used.map(x=>x.A),color:'#4472C4'}];if(r.ex.length)ser.push({name:'除いた点（実測値）',mode:'pts',x:r.ex.map(x=>x.C*1000),y:r.ex.map(x=>x.A),color:'#A5A5A5'});ser.push({name:'濃度未知試料',mode:'pts',x:[r.Cu*1000],y:[p.Aunk],color:'#ED7D31'});
- const fits=[{a:r.fall.a/1000,b:r.fall.b,color:'#4472C4'}];if(r.fuse)fits.push({a:r.fuse.a/1000,b:r.fuse.b,color:'#A5A5A5'});
- plot($('c-cv'),{series:ser,fits,xlab:'C / 10⁻³ mol L⁻¹',ylab:'A',xmin:0,y0:true});
- const c2=$('c-cv2');if(p.spectra.length){c2.hidden=false;plot(c2,{series:p.spectra.map((s,i)=>({name:s.label,mode:'line',x:s.data.map(q=>q[0]),y:s.data.map(q=>q[1]),color:i?'#ED7D31':'#4472C4',dash:i?[6,4]:[]})),xlab:'λ / nm',ylab:'A'});}else c2.hidden=true;
+ REPORT.applyOverrides('colorimetry',o);REPORT.render($('c-rep'),'colorimetry',o,update);
  return o;}
 
 /* ---------------- BTB ---------------- */
@@ -97,7 +63,7 @@ function bRead(){const p={stock:num($('b-stock').value),aliq:num($('b-aliq').val
 function bCheck(p){const e=[];if(p.samples.length<3)e.push('pHの異なるスペクトルを3つ以上読み込んでください（両端のpHと、その間の溶液）。');else if(p.samples.some(s=>!isFinite(s.pH)))e.push('すべてのファイルにpHを入力してください。');
  if(!(p.stock>0&&p.aliq>0&&p.flask>0&&p.l>0))e.push('テキストの条件に正の数を入力してください。');if(!isFinite(p.w1)||!isFinite(p.w2))e.push('解析波長を入力してください。');if(!p.r1||!p.r2||!p.ri)e.push('範囲は「375-480」のように入力してください。');return e;}
 function bUpdate(){const p=bRead(),e=bCheck(p),m=$('b-msg'),res=$('b-res');
- if(e.length){m.className='msg err';m.textContent=e.join(' ');res.innerHTML='';plot($('b-cv'),{series:[],empty:'スペクトルを読み込むとグラフが表示されます'});plot($('b-cv2'),{series:[],empty:''});return null;}
+ if(e.length){m.className='msg err';m.textContent=e.join(' ');res.innerHTML='';REPORT.render($('b-rep'),'btb',null);return null;}
  const o=LAB.btb(p),r=o.res;const notes=[];
  const bad=r.rowsA.slice(1,-1).filter(x=>!isFinite(x.y1)||!isFinite(x.y2));if(bad.length)notes.push('pH '+bad.map(x=>x.pH.toFixed(2)).join('、')+' は log 値が求められない波長があります（表3では「解なし」）。');
  if(r.steps.length)notes.push('約 '+r.steps.join(' nm、約 ')+' nm に装置の段差があります。');
@@ -107,10 +73,7 @@ function bUpdate(){const p=bRead(),e=bCheck(p),m=$('b-msg'),res=$('b-res');
  m.className=notes.length?'msg warn':'msg';m.textContent=notes.join(' ');
  const pk=f=>f?fmt(-f.b/f.a,2):'—';
  res.innerHTML=[[`pKa（${p.w1} nm / ${p.w2} nm）`,pk(r.f1)+' / '+pk(r.f2)],['pKa の平均',fmt(r.pkm,2)],['等吸収点',r.iso?r.iso.w+' nm':'—']].map(([k,v])=>`<div class="kv"><span>${k}</span><b>${v}</b></div>`).join('');
- plot($('b-cv'),{series:r.S.map(s=>({name:'pH '+s.pH.toFixed(2),mode:'line',x:s.data.map(q=>q[0]),y:s.data.map(q=>q[1]),color:'#'+LAB.btbColor(s.pH)})),xlab:'λ / nm',ylab:'A'});
- const ser=[],fits=[];if(r.u1.length){ser.push({name:p.w1+' nm',mode:'pts',x:r.u1.map(x=>x.pH),y:r.u1.map(x=>x.y1),color:'#ED7D31'});fits.push({...r.f1,color:'#ED7D31'});}
- if(r.u2.length){ser.push({name:p.w2+' nm',mode:'pts',marker:'tri',x:r.u2.map(x=>x.pH),y:r.u2.map(x=>x.y2),color:'#4472C4'});fits.push({...r.f2,color:'#4472C4'});}
- plot($('b-cv2'),{series:ser,fits:fits.filter(f=>isFinite(f.a)),xlab:'pH',ylab:'log₁₀{(A−A₁)/(A₂−A)}',empty:'計算に使える点がありません'});
+ REPORT.applyOverrides('btb',o);REPORT.render($('b-rep'),'btb',o,update);
  return o;}
 
 /* ---------------- 振動反応 ---------------- */
@@ -123,10 +86,10 @@ function oRows(){const n=Math.max(3,Math.min(30,parseInt($('o-n').value)||11));$
 function oRead(){const n=Math.max(3,Math.min(30,parseInt($('o-n').value)||11));return {n,temps:state.o.rows.map(r=>({t:num(r.t),times:Array.from({length:n},(_,i)=>LAB.parseTime(r.times[i]))}))};}
 function oCheck(p){const e=[];if(p.temps.length<2)e.push('温度は2つ以上必要です。');
  p.temps.forEach(t=>{if(!isFinite(t.t))e.push('温度を入力してください。');const bad=t.times.findIndex(v=>!isFinite(v));if(bad>=0)e.push(`${isFinite(t.t)?t.t+' ℃':'温度未入力の行'}の${bad+1}回目の時間を読み取れません。`);else if(t.times.some((v,i)=>i&&v<=t.times[i-1]))e.push(`${t.t} ℃の時間が増えていない箇所があります。`);});return [...new Set(e)];}
-function oUpdate(){const p=oRead(),e=oCheck(p),m=$('o-msg'),res=$('o-res');if(e.length){m.className='msg err';m.textContent=e.join(' ');res.innerHTML='';plot($('o-cv'),{series:[],empty:'すべての時間を入力するとグラフが表示されます'});return null;}
- const o=LAB.oscillation(p),r=o.res,cs=COLORS();m.className='msg';m.textContent='';
+function oUpdate(){const p=oRead(),e=oCheck(p),m=$('o-msg'),res=$('o-res');if(e.length){m.className='msg err';m.textContent=e.join(' ');res.innerHTML='';REPORT.render($('o-rep'),'oscillation',null);return null;}
+ const o=LAB.oscillation(p),r=o.res;m.className='msg';m.textContent='';
  res.innerHTML=[['Ea（誘導期）',fmt(r.Ea.ind,1)+' ± '+fmt(r.Ea.dind,1)+' kJ mol⁻¹'],['Ea（振動期）',fmt(r.Ea.osc,1)+' ± '+fmt(r.Ea.dosc,1)+' kJ mol⁻¹']].map(([k,v])=>`<div class="kv"><span>${k}</span><b>${v}</b></div>`).join('');
- plot($('o-cv'),{series:[{name:'誘導期',mode:'pts',marker:'sq',x:r.rows.map(x=>x.x),y:r.rows.map(x=>x.yi),color:'#ED7D31'},{name:'振動期',mode:'pts',x:r.rows.map(x=>x.x),y:r.rows.map(x=>x.yo),color:'#4472C4'}],fits:[{...r.fi,color:'#ED7D31'},{...r.fo,color:'#4472C4'}],xlab:'T⁻¹ / 10⁻³ K⁻¹',ylab:'ln (1/P)'});
+ REPORT.applyOverrides('oscillation',o);REPORT.render($('o-rep'),'oscillation',o,update);
  return o;}
 
 /* ---------------- shell ---------------- */
