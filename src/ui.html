@@ -31,14 +31,19 @@ nav a[aria-current="page"]{color:var(--ink);border-color:var(--accent)}
 nav a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 [hidden]{display:none!important}
 .wide{grid-column:1/-1}
+.caution{margin:0;font-size:13px;color:var(--warn);background:var(--warn-bg);border-radius:8px;padding:8px 12px;max-width:80ch}
+.caution b{color:var(--warn)}
+.style-pick{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:end}
+.style-pick label{display:grid;gap:3px;font-size:13px;color:var(--muted)}
+.style-pick select{width:auto}
+.style-pick .hint{flex-basis:100%}
+
 .rep{display:grid;gap:22px}
 .rep-item{display:grid;gap:8px;justify-items:center;padding-bottom:18px;border-bottom:1px dashed var(--line)}
 .rep-item:last-child{border-bottom:none;padding-bottom:0}
 .rep-tbl{max-width:100%;overflow-x:auto;background:#fff;color:#000;padding:12px 16px;border-radius:6px;font-family:"Yu Mincho","YuMincho","Hiragino Mincho ProN",serif}
 .rep-tbl table{border-collapse:collapse;margin:0 auto;width:auto;font-size:14px}
 .rep-tbl th,.rep-tbl td{background:none;color:#000;font-weight:400;border:0;padding:2px 12px;white-space:nowrap;text-align:center;font-size:14px}
-.rep-tbl thead th{border-top:2px solid #000;border-bottom:1px solid #000}
-.rep-tbl td.last,.rep-tbl tr:last-child td{border-bottom:2px solid #000}
 .rep-tbl .cap{margin:0 0 4px;text-align:center;font-size:14px}
 .rep-tbl .note{margin:4px 0 0;font-size:12px}
 .rep-fig{width:100%;max-width:760px}
@@ -58,7 +63,7 @@ nav a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visibl
 .btn.icon{padding:5px 10px;font-size:12px;font-weight:400}
 .btn[disabled]{opacity:.5;cursor:default}
 @media (max-width:600px){.ax-row{grid-template-columns:repeat(3,minmax(0,1fr))}.ax-lab{grid-column:1/-1;padding:0}.ax-row .btn{grid-column:1/-1}}
-@media (max-width:600px){.rep-tbl{padding:8px 6px}.rep-tbl table,.rep-tbl th,.rep-tbl td,.rep-tbl .cap{font-size:12px}.rep-tbl th,.rep-tbl td{padding:2px 6px}.rep-tbl .cap{white-space:normal}}
+@media (max-width:600px){.rep-tbl{padding:8px 6px}.rep-tbl table,.rep-tbl th,.rep-tbl td,.rep-tbl .cap{font-size:12px!important}.rep-tbl th,.rep-tbl td{padding:2px 6px!important}.rep-tbl .cap{white-space:normal}}
 
 .panel{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:22px;align-items:start}
 @media (max-width:860px){.panel{grid-template-columns:1fr}}
@@ -111,7 +116,8 @@ details.box[open]>summary{color:var(--ink)}
 <div class="wrap">
 <header>
  <h1>化学実験 第3実験室 図表メーカー<small>LAB 3 · XLSX</small></h1>
- <p class="lead">第3実験室のレポートで使う表とグラフを、測定値を入力するだけでExcelファイルにします。スペクトルは分光光度計のテキストファイル（JASCO形式）をそのまま読み込めます。Excelの「レポート用」シートには、レポートと同じ形式（三線表・図の書式）の表とグラフだけが入ります。計算の途中は「計算」シートにあります。ページの下では、その表と図をそのまま確認でき、表はWordへコピー、図はPNG保存・コピーができます。</p>
+ <p class="lead">第3実験室のレポートで使う表とグラフを、測定値を入力するだけでExcelファイルにします。スペクトルは分光光度計のテキストファイル（JASCO形式）をそのまま読み込めます。Excelの「レポート用」シートには、レポートに貼る表とグラフだけが入ります（表・図の見た目は4種類・3種類から選べ、全体が同じ見た目にそろいます）。計算の途中は「計算」シートにあります。ページの下では、その表と図をそのまま確認でき、表はWordへコピー、図はPNG保存・コピーができます。</p>
+ <p class="caution">⚠ 作られる表・図のタイトルや項目名、グラフの書式はあくまで一例です。そのまま使うと他の人のレポートと同じになるので、<b>自分が分かりやすいと思う書き方・書式に変えて</b>使ってください。</p>
 </header>
 
 <nav aria-label="実験の切り替え">
@@ -157,7 +163,11 @@ details.box[open]>summary{color:var(--ink)}
  </div>
  <section class="box wide">
   <h2>レポートの表と図<span class="tag">Excelの「レポート用」シートと同じ</span></h2>
-  <p class="hint">表は「表をコピー」でWordにそのまま貼り付けられます（三線・游明朝）。図の範囲はデータに合わせて自動で決まり、「軸の範囲」で変えられます。凡例はドラッグで移動、パソコンではグラフをドラッグすると上下に動かせます。変えた内容はExcelにもそのまま入ります。</p>
+  <p class="caution">⚠ <b>そのまま使わないでください。</b>表・図のタイトル（「表1　…」「図1　…」）や項目名、グラフの書式をそのまま使うと、このツールを使った人どうしでレポートが同じ見た目・同じ文言になってしまいます。タイトルや項目の書き方、グラフの書式（色・線・凡例・軸の名前など）は、<b>自分が分かりやすいと思う形に必ず変えてから</b>使ってください。</p>
+  <div class="style-pick"><label>表の見た目<select class="ts-pick"><option value="three">三線表（明朝）</option><option value="lines">横罫線（明朝）</option><option value="grid">格子（明朝）</option><option value="shade">見出し網掛け（ゴシック）</option></select></label>
+   <label>図の見た目<select class="cs-pick"><option value="office">標準（Excel風・目盛線あり）</option><option value="paper">論文風（枠と目盛、目盛線なし）</option><option value="mono">白黒（線種と記号で区別）</option></select></label>
+   <span class="hint">ここで選ぶと、すべての実験の表・図が同じ見た目に切り替わります（統一感のため）。</span></div>
+  <p class="hint">表は「表をコピー」でWordにそのまま貼り付けられます。図の範囲はデータに合わせて自動で決まり、「軸の範囲」で変えられます。凡例はドラッグで移動、パソコンではグラフをドラッグすると上下に動かせます。変えた内容はExcelにもそのまま入ります。</p>
   <div class="rep" id="c-rep"></div>
  </section>
 </div>
@@ -195,7 +205,11 @@ details.box[open]>summary{color:var(--ink)}
  </div>
  <section class="box wide">
   <h2>レポートの表と図<span class="tag">Excelの「レポート用」シートと同じ</span></h2>
-  <p class="hint">表は「表をコピー」でWordにそのまま貼り付けられます（三線・游明朝）。図の範囲はデータに合わせて自動で決まり、「軸の範囲」で変えられます。凡例はドラッグで移動、パソコンではグラフをドラッグすると上下に動かせます。変えた内容はExcelにもそのまま入ります。</p>
+  <p class="caution">⚠ <b>そのまま使わないでください。</b>表・図のタイトル（「表1　…」「図1　…」）や項目名、グラフの書式をそのまま使うと、このツールを使った人どうしでレポートが同じ見た目・同じ文言になってしまいます。タイトルや項目の書き方、グラフの書式（色・線・凡例・軸の名前など）は、<b>自分が分かりやすいと思う形に必ず変えてから</b>使ってください。</p>
+  <div class="style-pick"><label>表の見た目<select class="ts-pick"><option value="three">三線表（明朝）</option><option value="lines">横罫線（明朝）</option><option value="grid">格子（明朝）</option><option value="shade">見出し網掛け（ゴシック）</option></select></label>
+   <label>図の見た目<select class="cs-pick"><option value="office">標準（Excel風・目盛線あり）</option><option value="paper">論文風（枠と目盛、目盛線なし）</option><option value="mono">白黒（線種と記号で区別）</option></select></label>
+   <span class="hint">ここで選ぶと、すべての実験の表・図が同じ見た目に切り替わります（統一感のため）。</span></div>
+  <p class="hint">表は「表をコピー」でWordにそのまま貼り付けられます。図の範囲はデータに合わせて自動で決まり、「軸の範囲」で変えられます。凡例はドラッグで移動、パソコンではグラフをドラッグすると上下に動かせます。変えた内容はExcelにもそのまま入ります。</p>
   <div class="rep" id="b-rep"></div>
  </section>
 </div>
@@ -220,7 +234,11 @@ details.box[open]>summary{color:var(--ink)}
  </div>
  <section class="box wide">
   <h2>レポートの表と図<span class="tag">Excelの「レポート用」シートと同じ</span></h2>
-  <p class="hint">表は「表をコピー」でWordにそのまま貼り付けられます（三線・游明朝）。図の範囲はデータに合わせて自動で決まり、「軸の範囲」で変えられます。凡例はドラッグで移動、パソコンではグラフをドラッグすると上下に動かせます。変えた内容はExcelにもそのまま入ります。</p>
+  <p class="caution">⚠ <b>そのまま使わないでください。</b>表・図のタイトル（「表1　…」「図1　…」）や項目名、グラフの書式をそのまま使うと、このツールを使った人どうしでレポートが同じ見た目・同じ文言になってしまいます。タイトルや項目の書き方、グラフの書式（色・線・凡例・軸の名前など）は、<b>自分が分かりやすいと思う形に必ず変えてから</b>使ってください。</p>
+  <div class="style-pick"><label>表の見た目<select class="ts-pick"><option value="three">三線表（明朝）</option><option value="lines">横罫線（明朝）</option><option value="grid">格子（明朝）</option><option value="shade">見出し網掛け（ゴシック）</option></select></label>
+   <label>図の見た目<select class="cs-pick"><option value="office">標準（Excel風・目盛線あり）</option><option value="paper">論文風（枠と目盛、目盛線なし）</option><option value="mono">白黒（線種と記号で区別）</option></select></label>
+   <span class="hint">ここで選ぶと、すべての実験の表・図が同じ見た目に切り替わります（統一感のため）。</span></div>
+  <p class="hint">表は「表をコピー」でWordにそのまま貼り付けられます。図の範囲はデータに合わせて自動で決まり、「軸の範囲」で変えられます。凡例はドラッグで移動、パソコンではグラフをドラッグすると上下に動かせます。変えた内容はExcelにもそのまま入ります。</p>
   <div class="rep" id="o-rep"></div>
  </section>
 </div>

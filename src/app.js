@@ -38,12 +38,12 @@ function cCheck(p){const e=[];if(!(p.mass>0))e.push('硫酸銅五水和物の質
  if(p.A.some(v=>!isFinite(v)))e.push('No.1〜6 の吸光度をすべて入力してください。');if(p.use.filter(Boolean).length<2)e.push('検量線には2点以上が必要です。');if(!isFinite(p.Aunk))e.push('No.7 の吸光度を入力してください。');return e;}
 function cSub(p){for(let i=0;i<6;i++){const el=$('c-sub'+i);if(el)el.textContent=isFinite(p.V[i])?`（${p.V[i].toFixed(2)} mL）`:'';}}
 function cUpdate(){const p=cRead();cSub(p);const e=cCheck(p),m=$('c-msg'),res=$('c-res');if(e.length){m.className='msg err';m.textContent=e.join(' ');res.innerHTML='';REPORT.render($('c-rep'),'colorimetry',null);return null;}
- const o=LAB.colorimetry(p),r=o.res;m.className='msg';m.textContent='';
+ const o=LAB.colorimetry({...p,tableStyle:STYLE.table}),r=o.res;m.className='msg';m.textContent='';
  const kv=[['検量線（全点）の傾き',`${fmt(r.fall.a,1)} L mol⁻¹`],['もとの硫酸銅溶液の濃度',fmt(r.orig,3)+' mol L⁻¹']];
  if(r.fuse)kv.push([`No.${r.ex.map(x=>x.no).join(', ')} を除くと（図3）`,fmt(r.orig2,3)+' mol L⁻¹']);
  r.spec.forEach(s=>{if(s.pk)kv.push([s.label.replace('させた比色用標準溶液','後').replace('させていない硫酸銅溶液','前')+'のピーク',`${Math.round(s.pk.w)} nm, ε = ${fmt(s.eps,1)}`]);});
  res.innerHTML=kv.map(([k,v])=>`<div class="kv"><span>${k}</span><b>${v}</b></div>`).join('');
- REPORT.applyOverrides('colorimetry',o);REPORT.render($('c-rep'),'colorimetry',o,update);
+ REPORT.applyOverrides('colorimetry',o,STYLE.chart);REPORT.render($('c-rep'),'colorimetry',o,update,STYLE.table);
  return o;}
 
 /* ---------------- BTB ---------------- */
@@ -64,7 +64,7 @@ function bCheck(p){const e=[];if(p.samples.length<3)e.push('pHの異なるスペ
  if(!(p.stock>0&&p.aliq>0&&p.flask>0&&p.l>0))e.push('テキストの条件に正の数を入力してください。');if(!isFinite(p.w1)||!isFinite(p.w2))e.push('解析波長を入力してください。');if(!p.r1||!p.r2||!p.ri)e.push('範囲は「375-480」のように入力してください。');return e;}
 function bUpdate(){const p=bRead(),e=bCheck(p),m=$('b-msg'),res=$('b-res');
  if(e.length){m.className='msg err';m.textContent=e.join(' ');res.innerHTML='';REPORT.render($('b-rep'),'btb',null);return null;}
- const o=LAB.btb(p),r=o.res;const notes=[];
+ const o=LAB.btb({...p,tableStyle:STYLE.table}),r=o.res;const notes=[];
  const bad=r.rowsA.slice(1,-1).filter(x=>!isFinite(x.y1)||!isFinite(x.y2));if(bad.length)notes.push('pH '+bad.map(x=>x.pH.toFixed(2)).join('、')+' は log 値が求められない波長があります（表3では「解なし」）。');
  if(r.steps.length)notes.push('約 '+r.steps.join(' nm、約 ')+' nm に装置の段差があります。');
  // an intermediate pH must lie between the two end spectra at every wavelength; flag spectra that leave that band over >10 % of the range
@@ -73,7 +73,7 @@ function bUpdate(){const p=bRead(),e=bCheck(p),m=$('b-msg'),res=$('b-res');
  m.className=notes.length?'msg warn':'msg';m.textContent=notes.join(' ');
  const pk=f=>f?fmt(-f.b/f.a,2):'—';
  res.innerHTML=[[`pKa（${p.w1} nm / ${p.w2} nm）`,pk(r.f1)+' / '+pk(r.f2)],['pKa の平均',fmt(r.pkm,2)],['等吸収点',r.iso?r.iso.w+' nm':'—']].map(([k,v])=>`<div class="kv"><span>${k}</span><b>${v}</b></div>`).join('');
- REPORT.applyOverrides('btb',o);REPORT.render($('b-rep'),'btb',o,update);
+ REPORT.applyOverrides('btb',o,STYLE.chart);REPORT.render($('b-rep'),'btb',o,update,STYLE.table);
  return o;}
 
 /* ---------------- 振動反応 ---------------- */
@@ -87,10 +87,16 @@ function oRead(){const n=Math.max(3,Math.min(30,parseInt($('o-n').value)||11));r
 function oCheck(p){const e=[];if(p.temps.length<2)e.push('温度は2つ以上必要です。');
  p.temps.forEach(t=>{if(!isFinite(t.t))e.push('温度を入力してください。');const bad=t.times.findIndex(v=>!isFinite(v));if(bad>=0)e.push(`${isFinite(t.t)?t.t+' ℃':'温度未入力の行'}の${bad+1}回目の時間を読み取れません。`);else if(t.times.some((v,i)=>i&&v<=t.times[i-1]))e.push(`${t.t} ℃の時間が増えていない箇所があります。`);});return [...new Set(e)];}
 function oUpdate(){const p=oRead(),e=oCheck(p),m=$('o-msg'),res=$('o-res');if(e.length){m.className='msg err';m.textContent=e.join(' ');res.innerHTML='';REPORT.render($('o-rep'),'oscillation',null);return null;}
- const o=LAB.oscillation(p),r=o.res;m.className='msg';m.textContent='';
+ const o=LAB.oscillation({...p,tableStyle:STYLE.table}),r=o.res;m.className='msg';m.textContent='';
  res.innerHTML=[['Ea（誘導期）',fmt(r.Ea.ind,1)+' ± '+fmt(r.Ea.dind,1)+' kJ mol⁻¹'],['Ea（振動期）',fmt(r.Ea.osc,1)+' ± '+fmt(r.Ea.dosc,1)+' kJ mol⁻¹']].map(([k,v])=>`<div class="kv"><span>${k}</span><b>${v}</b></div>`).join('');
- REPORT.applyOverrides('oscillation',o);REPORT.render($('o-rep'),'oscillation',o,update);
+ REPORT.applyOverrides('oscillation',o,STYLE.chart);REPORT.render($('o-rep'),'oscillation',o,update,STYLE.table);
  return o;}
+
+/* ---------------- look of all tables / figures (one setting for everything, remembered in this browser) ---------------- */
+const STYLE={table:'three',chart:'office'};try{const s=JSON.parse(localStorage.getItem('chem-tool-style')||'{}');if(s.table)STYLE.table=s.table;if(s.chart)STYLE.chart=s.chart;}catch(_){}
+function syncPick(){document.querySelectorAll('.ts-pick').forEach(s=>s.value=STYLE.table);document.querySelectorAll('.cs-pick').forEach(s=>s.value=STYLE.chart);}
+document.querySelectorAll('.ts-pick,.cs-pick').forEach(s=>s.addEventListener('change',()=>{if(s.classList.contains('ts-pick'))STYLE.table=s.value;else STYLE.chart=s.value;syncPick();try{localStorage.setItem('chem-tool-style',JSON.stringify(STYLE));}catch(_){}update();}));
+syncPick();
 
 /* ---------------- shell ---------------- */
 function bindDrop(dr,inp,cb){dr.addEventListener('click',e=>{if(e.target!==inp)inp.click();});dr.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();inp.click();}});

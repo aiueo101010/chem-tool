@@ -29,7 +29,7 @@ function autoMajor(span){if(!(span>0))return 1;const fits=c=>{const n=span/c;ret
 function fmtNum(v,fmt){if(Math.abs(v)<1e-12)v=0;const m=/^0(?:\.(0+))?$/.exec(fmt||'');const s=m?v.toFixed(m[1]?m[1].length:0):String(+v.toPrecision(10));return s.replace('-','−');}
 function fit(x,y){const n=x.length;if(n<2)return null;const mx=x.reduce((a,b)=>a+b,0)/n,my=y.reduce((a,b)=>a+b,0)/n;let sxx=0,sxy=0;for(let i=0;i<n;i++){sxx+=(x[i]-mx)**2;sxy+=(x[i]-mx)*(y[i]-my);}const a=sxy/sxx;return {a,b:my-a*mx};}
 function dashArr(d,w){const u=Math.max(d==='sysdot'||d==='dot'?2:1,w);return d==='dash'||d==='sysdash'?[4*u,3*u]:d==='sysdot'||d==='dot'?[u,u]:d==='dashdot'?[4*u,2*u,u,2*u]:[];}
-function marker(g,sym,x,y,size,color){const r=size/2+0.5;g.fillStyle=color;g.beginPath();
+function marker(g,sym,x,y,size,color){const r=size/2+0.5;if(sym==='x'||sym==='plus'){g.strokeStyle=color;g.lineWidth=1.6;g.beginPath();if(sym==='x'){g.moveTo(x-r,y-r);g.lineTo(x+r,y+r);g.moveTo(x+r,y-r);g.lineTo(x-r,y+r);}else{g.moveTo(x-r,y);g.lineTo(x+r,y);g.moveTo(x,y-r);g.lineTo(x,y+r);}g.stroke();return;}g.fillStyle=color;g.beginPath();
  if(sym==='square')g.rect(x-r,y-r,2*r,2*r);else if(sym==='triangle'){g.moveTo(x,y-r*1.15);g.lineTo(x+r*1.1,y+r*0.8);g.lineTo(x-r*1.1,y+r*0.8);g.closePath();}else if(sym==='diamond'){g.moveTo(x,y-r*1.2);g.lineTo(x+r*1.2,y);g.lineTo(x,y+r*1.2);g.lineTo(x-r*1.2,y);g.closePath();}else g.arc(x,y,r,0,7);g.fill();}
 
 /* draw one chart spec (the same object handed to the xlsx writer) into a W×H box */
@@ -37,14 +37,18 @@ function draw(g,ch,W,H){g.fillStyle='#fff';g.fillRect(0,0,W,H);
  const xa=ch.x,ya=ch.y;const yl=Math.max(...[ya.min,ya.max,ya.min+ya.major].map(v=>rwidth(g,fmtNum(v,ya.fmt),12)));
  const PL=Math.round(yl+40),PR=16,PT=14,PB=52;const pw=W-PL-PR,ph=H-PT-PB;
  const X=v=>PL+(v-xa.min)/(xa.max-xa.min)*pw,Y=v=>PT+ph-(v-ya.min)/(ya.max-ya.min)*ph;
+ const LK=ch.look||'office',TXT=LK==='office'?GRAY:'#000',GRID=LK!=='paper';
  g.lineWidth=1;g.font=`12px ${FONT}`;
  // gridlines + tick labels (Excel counts ticks from the axis minimum)
- for(let k=0;k<=200;k++){const v=xa.min+k*xa.major;if(v>xa.max+xa.major*1e-6)break;const x=Math.round(X(v))+.5;g.strokeStyle='#D9D9D9';g.beginPath();g.moveTo(x,PT);g.lineTo(x,PT+ph);g.stroke();g.fillStyle=GRAY;g.textAlign='center';g.fillText(fmtNum(v,xa.fmt),x,PT+ph+16);}
+ for(let k=0;k<=200;k++){const v=xa.min+k*xa.major;if(v>xa.max+xa.major*1e-6)break;const x=Math.round(X(v))+.5;if(GRID){g.strokeStyle='#D9D9D9';g.beginPath();g.moveTo(x,PT);g.lineTo(x,PT+ph);g.stroke();}g.fillStyle=TXT;g.textAlign='center';g.fillText(fmtNum(v,xa.fmt),x,PT+ph+16);}
  const y0t=ch._moving?Math.ceil(ya.min/ya.major-1e-9)*ya.major:ya.min;   // while being dragged the ticks stay on the data; at rest Excel counts from the minimum
- for(let k=0;k<=200;k++){const v=y0t+k*ya.major;if(v>ya.max+ya.major*1e-6)break;const y=Math.round(Y(v))+.5;g.strokeStyle='#D9D9D9';g.beginPath();g.moveTo(PL,y);g.lineTo(PL+pw,y);g.stroke();g.fillStyle=GRAY;g.textAlign='right';g.font=`12px ${FONT}`;g.fillText(fmtNum(v,ya.fmt),PL-6,y+4);}
+ for(let k=0;k<=200;k++){const v=y0t+k*ya.major;if(v>ya.max+ya.major*1e-6)break;const y=Math.round(Y(v))+.5;if(GRID){g.strokeStyle='#D9D9D9';g.beginPath();g.moveTo(PL,y);g.lineTo(PL+pw,y);g.stroke();}g.fillStyle=TXT;g.textAlign='right';g.font=`12px ${FONT}`;g.fillText(fmtNum(v,ya.fmt),PL-6,y+4);}
  // axis lines cross at zero (or at the nearer end when zero is outside the range)
- const cz=(a)=>Math.min(Math.max(0,a.min),a.max);g.strokeStyle='#BFBFBF';g.beginPath();const y0=Math.round(Y(cz(ya)))+.5,x0=Math.round(X(cz(xa)))+.5;g.moveTo(PL,y0);g.lineTo(PL+pw,y0);g.moveTo(x0,PT);g.lineTo(x0,PT+ph);g.stroke();
- g.fillStyle=GRAY;rdraw(g,xa.title||'',PL+pw/2,H-12,13,'center');g.save();g.translate(16,PT+ph/2);g.rotate(-Math.PI/2);rdraw(g,ya.title||'',0,0,13,'center');g.restore();
+ const cz=(a)=>Math.min(Math.max(0,a.min),a.max);g.strokeStyle=LK==='office'?'#BFBFBF':'#000';g.beginPath();const y0=Math.round(Y(cz(ya)))+.5,x0=Math.round(X(cz(xa)))+.5;g.moveTo(PL,y0);g.lineTo(PL+pw,y0);g.moveTo(x0,PT);g.lineTo(x0,PT+ph);g.stroke();
+ if(LK==='paper'){g.strokeStyle='#000';g.strokeRect(PL+.5,PT+.5,pw-1,ph-1);g.beginPath();   // framed plot, tick marks pointing out
+  for(let k=0;k<=200;k++){const v=xa.min+k*xa.major;if(v>xa.max+xa.major*1e-6)break;const x=Math.round(X(v))+.5;g.moveTo(x,y0);g.lineTo(x,y0+5);}
+  for(let k=0;k<=200;k++){const v=y0t+k*ya.major;if(v>ya.max+ya.major*1e-6)break;const y=Math.round(Y(v))+.5;g.moveTo(x0,y);g.lineTo(x0-5,y);}g.stroke();}
+ g.fillStyle=TXT;rdraw(g,xa.title||'',PL+pw/2,H-12,13,'center');g.save();g.translate(16,PT+ph/2);g.rotate(-Math.PI/2);rdraw(g,ya.title||'',0,0,13,'center');g.restore();
  // series, trendlines
  const tls=[];const labels=[];
  g.save();g.beginPath();g.rect(PL-4,PT-4,pw+8,ph+8);g.clip();
@@ -66,20 +70,23 @@ function draw(g,ch,W,H){g.fillStyle='#fff';g.fillRect(0,0,W,H);
  // legend: series first, then trendlines (Excel order)
  let box=null;if(ch.legend!==false){const lg=ch.legend||{x:0.12,y:0.04,w:0.45,h:0.22};const entries=[...ch.series.map(s=>({name:s.name,color:'#'+(s.color||'4472C4'),line:!!s.line,dash:s.dash||'solid',width:s.width,marker:s.line?null:s.marker,msize:s.msize})),...tls.map(t=>({name:t.name,color:t.color,line:true,dash:t.dash,width:19050}))];
   const rowH=18,x0=lg.x*W,y1=lg.y*H;let tw=0;entries.forEach((e,i)=>{const y=y1+8+i*rowH+rowH/2;if(e.line){const lw=(e.width||28575)/12700*1.333;g.strokeStyle=e.color;g.lineWidth=lw;g.lineCap='butt';g.setLineDash(dashArr(e.dash,lw));g.beginPath();g.moveTo(x0+4,y);g.lineTo(x0+28,y);g.stroke();g.setLineDash([]);}
-   else if(e.marker)marker(g,e.marker,x0+16,y,e.msize||7,e.color);g.fillStyle=GRAY;tw=Math.max(tw,rdraw(g,e.name,x0+34,y+4.5,13,'left'));});
+   else if(e.marker)marker(g,e.marker,x0+16,y,e.msize||7,e.color);g.fillStyle=TXT;tw=Math.max(tw,rdraw(g,e.name,x0+34,y+4.5,13,'left'));});
   box={x:x0,y:y1,w:Math.max(lg.w*W,tw+40),h:Math.max(lg.h*H,entries.length*rowH+12)};}
  return {legend:box,plot:{PL,PT,pw,ph,xa,ya}};}
 
 /* ---------- copy helpers ---------- */
 async function copyHTML(htmlStr,text){try{if(navigator.clipboard&&window.ClipboardItem){await navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([htmlStr],{type:'text/html'}),'text/plain':new Blob([text],{type:'text/plain'})})]);return true;}}catch(_){}
  try{const d=document.createElement('div');d.contentEditable='true';d.style.cssText='position:fixed;left:-9999px;top:0';d.innerHTML=htmlStr;document.body.appendChild(d);const r=document.createRange();r.selectNodeContents(d);const s=getSelection();s.removeAllRanges();s.addRange(r);const ok=document.execCommand('copy');s.removeAllRanges();d.remove();return ok;}catch(_){return false;}}
-function tableHTML(t,forWord){const sp=t.spans||t.head.map(()=>1);const n=t.rows.length;const cell=(v,tag,i,j,extra='')=>{const last=tag==='td'&&i===n-1;
-  const st=forWord?`style="font-family:'游明朝','Yu Mincho',serif;font-size:10.5pt;text-align:center;padding:1pt 9pt;${tag==='th'?'border-top:1.5pt solid #000;border-bottom:.75pt solid #000;font-weight:normal;':''}${last?'border-bottom:1.5pt solid #000;':''}"`:(last?'class="last"':'');
-  return `<${tag} ${st}${sp[j]>1?` colspan="${sp[j]}"`:''}${extra}>${html(v)}</${tag}>`;};
+/* table looks (same names as the Excel styles): three-line / grid / shade (gothic, grey header) / lines (ruled rows) */
+function tableHTML(t,forWord,ts='three'){const sp=t.spans||t.head.map(()=>1);const n=t.rows.length;
+ const U=forWord?{k:'1.5pt',h:'.75pt',fs:'10.5pt',sm:'9pt',pad:'1pt 9pt'}:{k:'2px',h:'1px',fs:'14px',sm:'12px',pad:'2px 12px'};
+ const FF=ts==='shade'?"'游ゴシック','Yu Gothic','YuGothic',sans-serif":"'游明朝','Yu Mincho','YuMincho',serif";
+ const K=`${U.k} solid #000`,T=`${U.h} solid #000`;
+ const bd=(tag,last)=>{if(ts==='grid')return `border:${T};`;if(tag==='th')return ts==='lines'?`border-top:${K};border-bottom:${K};`:`border-top:${K};border-bottom:${T};`+(ts==='shade'?'background:#D9D9D9;':'');
+  return last?`border-bottom:${K};`:ts==='lines'?`border-bottom:${T};`:'';};
+ const cell=(v,tag,i,j,extra='')=>`<${tag} style="font-family:${FF};font-size:${U.fs};font-weight:normal;color:#000;text-align:center;white-space:nowrap;padding:${U.pad};${bd(tag,tag==='td'&&i===n-1)}"${sp[j]>1?` colspan="${sp[j]}"`:''}${extra}>${html(v)}</${tag}>`;
  const rows=t.rows.map((r,i)=>'<tr>'+r.map((v,j)=>{if(t.vmerge&&j===0){if(i%t.vmerge)return '';return cell(v,'td',i+t.vmerge-1,j,` rowspan="${t.vmerge}"`);}return cell(v,'td',i,j);}).join('')+'</tr>').join('');
- const capSt=forWord?` style="font-family:'游明朝','Yu Mincho',serif;font-size:10.5pt;text-align:center;margin:0 0 2pt"`:'';
- const noteSt=forWord?` style="font-family:'游明朝','Yu Mincho',serif;font-size:9pt;margin:2pt 0 0"`:'';
- return `<p class="cap"${capSt}>${html(t.caption)}</p><table${forWord?` style="border-collapse:collapse;margin:0 auto"`:''}><thead><tr>${t.head.map((h,j)=>cell(h,'th',0,j)).join('')}</tr></thead><tbody>${rows}</tbody></table>${t.note?`<p class="note"${noteSt}>${html(t.note)}</p>`:''}`;}
+ return `<p class="cap" style="font-family:${FF};font-size:${U.fs};color:#000;text-align:center;margin:0 0 ${forWord?'2pt':'4px'}">${html(t.caption)}</p><table style="border-collapse:collapse;margin:0 auto"><thead><tr>${t.head.map((h,j)=>cell(h,'th',0,j)).join('')}</tr></thead><tbody>${rows}</tbody></table>${t.note?`<p class="note" style="font-family:${FF};font-size:${U.sm};color:#000;margin:${forWord?'2pt':'4px'} 0 0">${html(t.note)}</p>`:''}`;}
 const tableTSV=t=>[plain(t.caption),t.head.map(plain).join('\t'),...t.rows.map(r=>r.map(plain).join('\t')),t.note?plain(t.note):''].join('\n');
 
 /* ---------- rendering the list ---------- */
@@ -109,7 +116,10 @@ function autoPlace(it){const ch=it.chart.ch;if(!ch.legend)return;const {W,H}=cha
    if(!bb||sc<bb.sc)bb={sc,bx,by};}
   boxes.push([bb.bx,bb.by,lw,lh]);L.x=+((bb.bx-(ax+4))/W).toFixed(4);L.y=+((bb.by-(ay-lines.length*16.25-4))/H).toFixed(4);});}
 // user changes per figure: OV[tab][k] = {x:{min,max,major}, y:{…}, legend:{x,y}}; axes first, then automatic legend/label placement, then a dragged legend
-function applyOverrides(tab,o){if(!o||!o.report)return;let k=0;for(const it of o.report)if(it.type==='fig'){const ov=(OV[tab]||{})[k++]||{};const ch=it.chart.ch;
+/* figure look applied to every figure: office / paper / mono (black & white: colours → black, told apart by dash and marker shape) */
+function applyLook(ch,look){ch.look=look;if(look!=='mono')return;const D=['solid','dash','sysdot','dashdot','lgDash','sysDash'],MK=['circle','square','triangle','diamond','x','plus'];
+ let li=0,mi=0,ti=0;for(const s of ch.series){s.color='000000';if(s.line)s.dash=D[li++%D.length];if(s.marker&&s.marker!=='none')s.marker=MK[mi++%MK.length];if(s.trend){s.trend.color='000000';s.trend.dash=['sysdot','dash','dashdot'][ti++%3];}}}
+function applyOverrides(tab,o,look='office'){if(!o||!o.report)return;let k=0;for(const it of o.report)if(it.type==='fig'){const ov=(OV[tab]||{})[k++]||{};const ch=it.chart.ch;applyLook(ch,look);
  for(const ax of ['x','y'])if(ov[ax]){const m=ov[ax].major>0?ov[ax].major:autoMajor(ov[ax].max-ov[ax].min);Object.assign(ch[ax],{min:ov[ax].min,max:ov[ax].max,major:m,fmt:fmtOf(m)});}
  if(!ch.legend)continue;autoPlace(it);if(ov.legend)Object.assign(ch.legend,ov.legend);}}
 const ovOf=(tab,k)=>((OV[tab]=OV[tab]||{})[k]=OV[tab][k]||{});
@@ -117,10 +127,10 @@ let toast=null;
 function say(el,msg){el.textContent=msg;clearTimeout(el._t);el._t=setTimeout(()=>{el.textContent='';},2600);}
 function save(name,blob){const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);}
 function figCanvas(it,scale){const {W,H}=chartSize(it.sheet,it.chart);const c=document.createElement('canvas');c.width=W*scale;c.height=H*scale;const g=c.getContext('2d');g.scale(scale,scale);draw(g,it.chart.ch,W,H);return c;}
-function render(box,tab,o,rerender){box.innerHTML='';if(!o||!o.report){box.innerHTML='<p class="hint">入力がそろうと、ここにレポートの表と図が表示されます。</p>';return;}
+function render(box,tab,o,rerender,ts='three'){box.innerHTML='';if(!o||!o.report){box.innerHTML='<p class="hint">入力がそろうと、ここにレポートの表と図が表示されます。</p>';return;}
  let fi=0;for(const it of o.report){const card=document.createElement('div');card.className='rep-item';
-  if(it.type==='table'){card.innerHTML=`<div class="rep-tbl">${tableHTML(it,false)}</div><div class="rep-act"><button class="btn small" type="button">表をコピー（Wordに貼り付け）</button><span class="rep-msg" role="status"></span></div>`;
-   card.querySelector('button').addEventListener('click',async()=>{const ok=await copyHTML(tableHTML(it,true),tableTSV(it));say(card.querySelector('.rep-msg'),ok?'コピーしました。Wordで貼り付けてください。':'この環境ではコピーできませんでした。');});}
+  if(it.type==='table'){card.innerHTML=`<div class="rep-tbl">${tableHTML(it,false,ts)}</div><div class="rep-act"><button class="btn small" type="button">表をコピー（Wordに貼り付け）</button><span class="rep-msg" role="status"></span></div>`;
+   card.querySelector('button').addEventListener('click',async()=>{const ok=await copyHTML(tableHTML(it,true,ts),tableTSV(it));say(card.querySelector('.rep-msg'),ok?'コピーしました。Wordで貼り付けてください。':'この環境ではコピーできませんでした。');});}
   else{const k=fi++;const {W,H}=chartSize(it.sheet,it.chart);const ch=it.chart.ch;const ov=(OV[tab]||{})[k]||{};
    const axRow=(ax,lab)=>`<div class="ax-row"><span class="ax-lab">${lab}</span><label>最小<input type="number" step="any" data-ax="${ax}" data-f="min" value="${ch[ax].min}"></label><label>最大<input type="number" step="any" data-ax="${ax}" data-f="max" value="${ch[ax].max}"></label><label>間隔<input type="number" step="any" data-ax="${ax}" data-f="major" value="${ov[ax]&&ov[ax].major>0?ch[ax].major:''}" placeholder="自動 (${ch[ax].major})"></label><button class="btn icon" type="button" data-auto="${ax}" ${ov[ax]?'':'disabled'}>${ov[ax]?'自動に戻す':'自動'}</button></div>`;
    card.innerHTML=`<div class="rep-fig"><canvas aria-label="${esc(plain(it.caption))}"></canvas><span class="readout" hidden></span></div><p class="cap">${html(it.caption)}</p>

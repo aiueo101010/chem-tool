@@ -39,18 +39,22 @@ function valAxis(lo,hi,pad=0){const s=(hi-lo)||Math.abs(hi)||1;if(lo!==0)lo-=pad
  const m=niceStep(hi-lo);const min=+(Math.floor(lo/m+1e-9)*m).toFixed(10),max=+(Math.ceil(hi/m-1e-9)*m).toFixed(10);const major=autoMajor(max-min);return {min,max,major,fmt:fmtOf(major)};}
 /* ---------- what goes on the report sheet, in order (used for the on-screen preview / copy / PNG) ---------- */
 let REP=[];
+/* table looks (all tables on the sheet use the same one): three-line / grid / shaded header (gothic) / ruled rows */
+const TSTYLES={three:{th:ST.th,td:ST.td,tdl:ST.tdl,cap:ST.cap,tn:ST.tn},grid:{th:ST.gth,td:ST.gtd,tdl:ST.gtd,cap:ST.cap,tn:ST.tn},
+ shade:{th:ST.sth,td:ST.std,tdl:ST.stdl,cap:ST.scap,tn:ST.stn},lines:{th:ST.lth,td:ST.ltd,tdl:ST.tdl,cap:ST.cap,tn:ST.tn}};
+let TS=TSTYLES.three;
 /* ---------- report-style table (three-line, 游明朝, centred) ---------- */
 function table(sh,r,c,caption,head,rows,note,spans){REP.push({type:'table',r,caption,head,rows,note,spans});const sp=spans||head.map(()=>1);const W=sp.reduce((a,b)=>a+b,0);const pos=sp.map((_,j)=>c+sp.slice(0,j).reduce((a,b)=>a+b,0));
- sh.set(r,c,{r:caption},ST.cap);if(W>1)sh.merge(r,c,r,c+W-1);
+ sh.set(r,c,{r:caption},TS.cap);if(W>1)sh.merge(r,c,r,c+W-1);
  const put=(rr,j,v,st)=>{sh.set(rr,pos[j],{r:String(v)},st);for(let k=1;k<sp[j];k++)sh.set(rr,pos[j]+k,'',st);if(sp[j]>1)sh.merge(rr,pos[j],rr,pos[j]+sp[j]-1);};
- head.forEach((h,j)=>put(r+1,j,h,ST.th));
- rows.forEach((row,i)=>row.forEach((v,j)=>put(r+2+i,j,v,i===rows.length-1?ST.tdl:ST.td)));
- let end=r+2+rows.length;if(note){sh.set(end,c,{r:note},ST.tn);end++;}return end+1;}
-function caption(sh,r,c,text,w){sh.set(r,c,{r:text},ST.cap);sh.merge(r,c,r,c+w-1);const ch=sh.charts[sh.charts.length-1];if(ch&&!ch.caption){ch.caption=text;REP.push({type:'fig',r:ch.r,caption:text,chart:ch,sheet:sh});}}
+ head.forEach((h,j)=>put(r+1,j,h,TS.th));
+ rows.forEach((row,i)=>row.forEach((v,j)=>put(r+2+i,j,v,i===rows.length-1?TS.tdl:TS.td)));
+ let end=r+2+rows.length;if(note){sh.set(end,c,{r:note},TS.tn);end++;}return end+1;}
+function caption(sh,r,c,text,w){sh.set(r,c,{r:text},TS.cap);sh.merge(r,c,r,c+w-1);const ch=sh.charts[sh.charts.length-1];if(ch&&!ch.caption){ch.caption=text;REP.push({type:'fig',r:ch.r,caption:text,chart:ch,sheet:sh});}}
 const XFMT=d=>d<=0?'0':'0.'+'0'.repeat(d);
 
 /* ================== 比色分析 ================== */
-function colorimetry(p){REP=[];
+function colorimetry(p){REP=[];TS=TSTYLES[p.tableStyle]||TSTYLES.three;
  const rep=new Sheet('レポート用');rep.grid=false;const cs=new Sheet('計算');
  [6,20,12,16,16,20,10,10].forEach((w,i)=>rep.width(i,w));
  const n=p.mass/p.M,cstd=n/(p.vstd/1000),cstdR=roundSig(cstd,3);
@@ -114,7 +118,7 @@ function colorimetry(p){REP=[];
  return {sheets:[rep,cs],report:REP,res:{n,cstd,fall,fuse,Cu,orig,Cu2,orig2:Cu2*p.vflask/p.vunk,rows,used,ex,spec:specInfo.map(x=>({label:x.s.label,pk:x.pk,eps:x.pk?x.pk.a/(Cs*p.l):NaN}))}};}
 
 /* ================== BTB ================== */
-function btb(p){REP=[];
+function btb(p){REP=[];TS=TSTYLES[p.tableStyle]||TSTYLES.three;
  const S=[...p.samples].sort((a,b)=>a.pH-b.pH);const N=S.length;const C0=p.stock*1e-3*p.aliq/p.flask;const l=p.l;
  const grid=[...new Set(S.flatMap(s=>s.data.map(q=>q[0])))].sort((a,b)=>a-b);const maps=S.map(s=>new Map(s.data.map(q=>[q[0],q[1]])));
  const rep=new Sheet('レポート用');rep.grid=false;const cs=new Sheet('計算');
@@ -178,7 +182,7 @@ function btb(p){REP=[];
  return {sheets:[rep,cs],report:REP,res:{C0,rowsA,f1,f2,pkm,u1,u2,peaks,iso,steps:stp,base,S,grid,maps}};}
 
 /* ================== 振動反応 ================== */
-function oscillation(p){REP=[];const n=p.n;
+function oscillation(p){REP=[];TS=TSTYLES[p.tableStyle]||TSTYLES.three;const n=p.n;
  const rep=new Sheet('レポート用');rep.grid=false;const cs=new Sheet('計算');
  const rows=p.temps.map(t=>{const ts=t.times;const Pind=ts[0],Posc=(ts[n-1]-ts[0])/(n-1),T=t.t+273.15;return {t:t.t,T,Pind,Posc,ts,x:1000/T,yi:Math.log(1/Pind),yo:Math.log(1/Posc)};});
  const fi=fit(rows.map(x=>x.x),rows.map(x=>x.yi)),fo=fit(rows.map(x=>x.x),rows.map(x=>x.yo));const R=8.314;
@@ -195,7 +199,7 @@ function oscillation(p){REP=[];const n=p.n;
  rep.width(0,22).width(1,12);for(let c=2;c<2+n;c++)rep.width(c,7);
  let r=0;rep.set(r,0,'化学的振動反応：レポート用の表と図',ST.sub);r+=2;
  const t1=[];rows.forEach(x=>{t1.push([`${x.t} ℃`,'時間 / s',...x.ts.map(v=>String(Math.round(v)))]);t1.push(['','周期 / s',...x.ts.map((v,i)=>String(Math.round(i?v-x.ts[i-1]:v)))]);});
- const T1=r+2;r=table(rep,r,0,'表1　発色の回数と時間（時間は反応開始からの経過時間）',['温度','項目',...Array.from({length:n},(_,i)=>String(i+1))],t1,'※ 1回目の周期は誘導期 <i>P</i>_{ind} に等しい。');rows.forEach((_,k)=>{rep.set(T1+2*k,0,{r:`${rows[k].t} ℃`},ST.td);rep.set(T1+2*k+1,0,'',k===rows.length-1?ST.tdl:ST.td);rep.merge(T1+2*k,0,T1+2*k+1,0);});REP.find(x=>x.type==='table').vmerge=2;
+ const T1=r+2;r=table(rep,r,0,'表1　発色の回数と時間（時間は反応開始からの経過時間）',['温度','項目',...Array.from({length:n},(_,i)=>String(i+1))],t1,'※ 1回目の周期は誘導期 <i>P</i>_{ind} に等しい。');rows.forEach((_,k)=>{rep.set(T1+2*k,0,{r:`${rows[k].t} ℃`},TS.td);rep.set(T1+2*k+1,0,'',k===rows.length-1?TS.tdl:TS.td);rep.merge(T1+2*k,0,T1+2*k+1,0);});REP.find(x=>x.type==='table').vmerge=2;
  const W2=1+rows.length;
  r=table(rep,r,0,'表2　アーレニウスプロット用のデータ整理',['',...rows.map(x=>`${x.t} ℃`)],[
   [`<i>T</i>^{${M}1} / 10^{${M}3} K^{${M}1}`,...rows.map(x=>x.x.toFixed(3))],
