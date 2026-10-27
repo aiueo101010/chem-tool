@@ -44,7 +44,7 @@ const COLORS=()=>[css('--c1'),css('--c2'),css('--c3'),css('--c4'),'#7B5EA7','#5B
 const gauss=(x,m,s)=>Math.exp(-0.5*((x-m)/s)**2);
 function sampleCuSpectra(){const a=[],b=[];for(let w=400;w<=1000;w++){a.push([w,+(0.478*gauss(w,608,72)+0.018*gauss(w,455,38)-0.004).toFixed(6)]);b.push([w,+(0.092*gauss(w,790,90)+0.023).toFixed(6)]);}return [{label:'発色させた比色用標準溶液',data:a,name:'サンプル（架空）',lo:'400',hi:'1000',isSample:true},{label:'発色させていない硫酸銅溶液',data:b,name:'サンプル（架空）',lo:'400',hi:'1000',isSample:true}];}
 function sampleBTB(){let s=7;const rnd=()=>{s=(s*16807)%2147483647;return s/2147483647-0.5;};const C=1.2e-5;const pHs=[3.85,6.12,6.88,7.35,7.95,10.45];
- return pHs.map(pH=>{const fL=1/(1+10**(7.05-pH)),k=1+rnd()*0.008;const d=[];for(let w=350;w<=750;w++){const eH=1.55e4*gauss(w,431,42)+2500*gauss(w,350,25),eL=3.9e4*gauss(w,618,45)+3000*gauss(w,540,25)+5000*gauss(w,398,32)+1500*gauss(w,350,20);d.push([w,+((eH*(1-fL)+eL*fL)*C*k).toFixed(6)]);}
+ return pHs.map(pH=>{const fL=1/(1+10**(7.05-pH)),k=1+rnd()*0.008;const d=[];for(let w=350;w<=700;w++){const eH=1.55e4*gauss(w,431,42)+2500*gauss(w,350,25),eL=3.9e4*gauss(w,618,45)+3000*gauss(w,540,25)+5000*gauss(w,398,32)+1500*gauss(w,350,20);d.push([w,+((eH*(1-fL)+eL*fL)*C*k+0*rnd()).toFixed(6)]);}
   return {name:'サンプル_pH'+pH+'.txt',pH:String(pH),color:'',data:d,use:true,isSample:true};});}
 function sampleOsc(){return [[35,`1'32",1'46",1'59",2'13",2'28",2'43",2'57",3'13",3'29",3'45",4'02"`],[40,'69,78,88,97,107,117,127,138,149,160,171'],[45,'48,55,62,69,76,83,91,99,106,114,123'],[50,'35,40,45,50,55,59,64,69,75,80,86']].map(([t,s])=>({t:String(t),times:s.split(',')}));}
 const CDEF={mass:'1.18',M:'249.7',vstd:'100',vflask:'25',vunk:'1.00',l:'1.00',wl:'615',Vspec:'5.00',Vs:'0, 1, 2, 3, 4, 5',A:['0.000','0.098','0.203','0.297','0.402','0.494'],Aunk:'0.336'};
@@ -101,7 +101,9 @@ function bUpdate(){const p=bRead(),e=bCheck(p),m=$('b-msg'),res=$('b-res');
  const o=LAB.btb(p),r=o.res;const notes=[];
  const bad=r.rowsA.slice(1,-1).filter(x=>!isFinite(x.y1)||!isFinite(x.y2));if(bad.length)notes.push('pH '+bad.map(x=>x.pH.toFixed(2)).join('、')+' は log 値が求められない波長があります（表3では「解なし」）。');
  if(r.steps.length)notes.push('約 '+r.steps.join(' nm、約 ')+' nm に装置の段差があります。');
- const bs=r.base.map(b=>b.a),med=[...bs].sort((a,b)=>a-b)[Math.floor(bs.length/2)];const off=r.base.filter(b=>Math.abs(b.a-med)>0.025);if(off.length)notes.push('pH '+off.map(b=>b.pH.toFixed(2)).join('、')+' はスペクトル全体が上下にずれている可能性があります（「計算に使う」を外すと除けます）。');
+ // an intermediate pH must lie between the two end spectra at every wavelength; flag spectra that leave that band over >10 % of the range
+ const N=r.S.length,off=[];for(let k=1;k<N-1;k++){let out=0,n=0;for(const w of r.grid){const a0=r.maps[0].get(w),a1=r.maps[N-1].get(w),v=r.maps[k].get(w);if(a0==null||a1==null||v==null)continue;n++;if(v<Math.min(a0,a1)-0.01||v>Math.max(a0,a1)+0.01)out++;}if(n&&out/n>0.1)off.push({pH:r.S[k].pH});}
+ if(off.length)notes.push('pH '+off.map(b=>b.pH.toFixed(2)).join('、')+' はスペクトル全体が上下にずれている可能性があります（「計算に使う」を外すと除けます）。');
  m.className=notes.length?'msg warn':'msg';m.textContent=notes.join(' ');
  const pk=f=>f?fmt(-f.b/f.a,2):'—';
  res.innerHTML=[[`pKa（${p.w1} nm / ${p.w2} nm）`,pk(r.f1)+' / '+pk(r.f2)],['pKa の平均',fmt(r.pkm,2)],['等吸収点',r.iso?r.iso.w+' nm':'—']].map(([k,v])=>`<div class="kv"><span>${k}</span><b>${v}</b></div>`).join('');
