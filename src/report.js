@@ -169,4 +169,4 @@ function render(box,tab,o,rerender,ts='three'){box.innerHTML='';if(!o||!o.report
    card.querySelector('[data-a=copy]').addEventListener('click',async()=>{try{const p=new Promise(res=>figCanvas(it,3).toBlob(res,'image/png'));await navigator.clipboard.write([new ClipboardItem({'image/png':p})]);say(msg,'コピーしました。Wordで貼り付けてください。');}catch(_){say(msg,'この環境では画像のコピーができません。PNGで保存してください。');}});}
   box.appendChild(card);}}
 window.addEventListener('resize',()=>document.querySelectorAll('.rep-fig canvas').forEach(c=>c._paint&&c._paint()));
-return {render,applyOverrides,draw,chartSize};})();
+return {render,applyOverrides,draw,chartSize,getOV:()=>OV,setOV:v=>{for(const k in OV)delete OV[k];Object.assign(OV,v||{});}};})();

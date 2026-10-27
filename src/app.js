@@ -105,7 +105,21 @@ function bindDrop(dr,inp,cb){dr.addEventListener('click',e=>{if(e.target!==inp)i
 function touch(t){if(state.sample[t]){state.sample[t]=false;note();}}
 function note(){const s=state.sample[state.tab];$('bar-note').innerHTML=s?'<span class="chip">サンプル値を表示中</span> 自分の測定値に書き換えてから作成してください。':'<span class="chip ok">自分の値</span> 「レポート用」シートに表と図、「計算」シートに途中計算が入ります。';}
 const UPD={colorimetry:cUpdate,btb:bUpdate,oscillation:oUpdate};
-function update(){return UPD[state.tab]();}
+/* ---------------- remember the inputs in this browser (restored on the next visit; nothing leaves the browser) ---------------- */
+const SAVE_KEY='chem-tool-inputs-v1';
+const CF=['mass','Aunk','M','vstd','vflask','vunk','l','wl','Vs','Vspec'],BF=['stock','aliq','flask','l','w1','w2','r1','r2','ri'];
+function snapshot(withSpectra=true){const c={f:{},A:[],use:[]};CF.forEach(k=>c.f[k]=$('c-'+k).value);for(let i=0;i<6;i++){c.A.push($('c-A'+i).value);c.use.push($('c-u'+i).checked);}
+ c.spec=withSpectra?state.c.spec:[null,null];const b={f:{}};BF.forEach(k=>b.f[k]=$('b-'+k).value);b.files=withSpectra?state.b.files:[];
+ return {v:1,tab:state.tab,sample:state.sample,c,b,o:{n:$('o-n').value,rows:state.o.rows},ov:REPORT.getOV()};}
+let saveT=0;function saveSoon(){clearTimeout(saveT);saveT=setTimeout(()=>{let ok=false;try{localStorage.setItem(SAVE_KEY,JSON.stringify(snapshot(true)));ok=true;}catch(_){}
+ if(!ok){try{localStorage.setItem(SAVE_KEY,JSON.stringify(snapshot(false)));}catch(_){}}},400);}   // too big for the browser's storage → keep everything except the spectra
+function restore(){let s=null;try{s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');}catch(_){}if(!s||s.v!==1)return false;
+ try{CF.forEach(k=>{if(s.c.f[k]!=null)$('c-'+k).value=s.c.f[k];});s.c.A.forEach((v,i)=>{if($('c-A'+i))$('c-A'+i).value=v;});s.c.use.forEach((v,i)=>{if($('c-u'+i))$('c-u'+i).checked=v;});
+  if(s.c.spec&&s.c.spec.some(Boolean)){state.c.spec=s.c.spec;}cSpecUI();
+  BF.forEach(k=>{if(s.b.f[k]!=null)$('b-'+k).value=s.b.f[k];});if(s.b.files&&s.b.files.length)state.b.files=s.b.files;bRows();
+  if(s.o){$('o-n').value=s.o.n||'11';if(s.o.rows)state.o.rows=s.o.rows;oRows();}
+  if(s.sample)Object.assign(state.sample,s.sample);if(s.tab&&!location.hash)state.tab=s.tab;if(s.ov)REPORT.setOV(s.ov);return true;}catch(_){return false;}}
+function update(){const o=UPD[state.tab]();saveSoon();return o;}
 function show(tab){const t=tab||(location.hash||'').slice(1);state.tab=UPD[t]?t:'colorimetry';document.querySelectorAll('nav a').forEach(a=>a.setAttribute('aria-current',a.dataset.tab===state.tab?'page':'false'));
  for(const k in UPD)$('p-'+k).hidden=k!==state.tab;note();update();}
 const NAMES={colorimetry:'比色分析_図表.xlsx',btb:'BTB_吸収スペクトル_図表.xlsx',oscillation:'振動反応_図表.xlsx'};
@@ -125,9 +139,10 @@ $('o-add').addEventListener('click',()=>{state.o.rows.push({t:'',times:[]});touc
 bindDrop($('b-drop'),$('b-file'),bLoad);
 cInit(true);
 bInit(true);oInit(true);
+const restored=restore();
 window.addEventListener('hashchange',()=>show());
 document.querySelectorAll('nav a').forEach(el=>el.addEventListener('click',e=>{e.preventDefault();const t=el.dataset.tab;show(t);try{if(location.hash!=='#'+t)history.replaceState(null,'','#'+t);}catch(_){}}));
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>update());
 new MutationObserver(()=>update()).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
-show();
+show(restored&&!location.hash?state.tab:undefined);
 })();
