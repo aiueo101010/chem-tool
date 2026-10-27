@@ -46,6 +46,18 @@ nav a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visibl
 .rep-item>.cap{margin:0;font-size:14px;font-family:"Yu Mincho","YuMincho","Hiragino Mincho ProN",serif;text-align:center}
 .rep-act{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:center}
 .rep-msg{font-size:12px;color:var(--accent)}
+.rep-fig{position:relative}
+.rep-fig .readout{display:block;text-align:right;min-height:18px;font-family:var(--f-mono);font-size:12px;color:var(--muted);padding:2px 4px 0;pointer-events:none;opacity:1;transition:opacity .6s ease}
+.rep-fig .readout[hidden]{display:block!important;visibility:hidden}
+.rep-fig .readout.fade{opacity:0}
+.rep-ax{width:100%;max-width:760px;font-size:13px}
+.rep-ax summary{cursor:pointer;color:var(--muted);font-weight:700}
+.ax-row{display:grid;grid-template-columns:auto repeat(3,minmax(0,1fr)) auto;gap:6px 8px;align-items:end;margin-top:8px}
+.ax-row label{display:grid;gap:2px;font-size:12px;color:var(--muted)}
+.ax-lab{font-weight:700;padding-bottom:8px}
+.btn.icon{padding:5px 10px;font-size:12px;font-weight:400}
+.btn[disabled]{opacity:.5;cursor:default}
+@media (max-width:600px){.ax-row{grid-template-columns:repeat(3,minmax(0,1fr))}.ax-lab{grid-column:1/-1;padding:0}.ax-row .btn{grid-column:1/-1}}
 @media (max-width:600px){.rep-tbl{padding:8px 6px}.rep-tbl table,.rep-tbl th,.rep-tbl td,.rep-tbl .cap{font-size:12px}.rep-tbl th,.rep-tbl td{padding:2px 6px}.rep-tbl .cap{white-space:normal}}
 
 .panel{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:22px;align-items:start}
@@ -145,7 +157,7 @@ details.box[open]>summary{color:var(--ink)}
  </div>
  <section class="box wide">
   <h2>レポートの表と図<span class="tag">Excelの「レポート用」シートと同じ</span></h2>
-  <p class="hint">表は「表をコピー」でWordにそのまま貼り付けられます（三線・游明朝）。図は凡例をドラッグして位置を変えられ、その位置でExcelにも入ります。</p>
+  <p class="hint">表は「表をコピー」でWordにそのまま貼り付けられます（三線・游明朝）。図の範囲はデータに合わせて自動で決まり、「軸の範囲」で変えられます。凡例はドラッグで移動、パソコンではグラフをドラッグすると上下に動かせます。変えた内容はExcelにもそのまま入ります。</p>
   <div class="rep" id="c-rep"></div>
  </section>
 </div>
@@ -183,7 +195,7 @@ details.box[open]>summary{color:var(--ink)}
  </div>
  <section class="box wide">
   <h2>レポートの表と図<span class="tag">Excelの「レポート用」シートと同じ</span></h2>
-  <p class="hint">表は「表をコピー」でWordにそのまま貼り付けられます（三線・游明朝）。図は凡例をドラッグして位置を変えられ、その位置でExcelにも入ります。</p>
+  <p class="hint">表は「表をコピー」でWordにそのまま貼り付けられます（三線・游明朝）。図の範囲はデータに合わせて自動で決まり、「軸の範囲」で変えられます。凡例はドラッグで移動、パソコンではグラフをドラッグすると上下に動かせます。変えた内容はExcelにもそのまま入ります。</p>
   <div class="rep" id="b-rep"></div>
  </section>
 </div>
@@ -208,7 +220,7 @@ details.box[open]>summary{color:var(--ink)}
  </div>
  <section class="box wide">
   <h2>レポートの表と図<span class="tag">Excelの「レポート用」シートと同じ</span></h2>
-  <p class="hint">表は「表をコピー」でWordにそのまま貼り付けられます（三線・游明朝）。図は凡例をドラッグして位置を変えられ、その位置でExcelにも入ります。</p>
+  <p class="hint">表は「表をコピー」でWordにそのまま貼り付けられます（三線・游明朝）。図の範囲はデータに合わせて自動で決まり、「軸の範囲」で変えられます。凡例はドラッグで移動、パソコンではグラフをドラッグすると上下に動かせます。変えた内容はExcelにもそのまま入ります。</p>
   <div class="rep" id="o-rep"></div>
  </section>
 </div>

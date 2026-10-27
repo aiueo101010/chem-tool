@@ -21,6 +21,11 @@ function rdraw(g,s,x,y,size,align='left'){const w=rwidth(g,s,size);let cx=align=
 /* ---------- figure geometry from the sheet (two-cell anchor → pixels, as Excel does) ---------- */
 const colPx=(sh,c)=>Math.round((sh.widths[c]??8.43)*7+5);
 function chartSize(sh,a){let w=0;for(let c=a.c;c<a.c2;c++)w+=colPx(sh,c);return {W:w,H:(a.r2-a.r)*24};}
+const decOf=v=>{const s=String(+(+v).toPrecision(8));const i=s.indexOf('.');return i<0?0:s.length-i-1;};
+const fmtOf=m=>{const d=Math.min(6,decOf(m));return d?'0.'+'0'.repeat(d):'0';};
+function niceStep(span,n=6){if(!(span>0))return 1;const raw=span/n,mag=10**Math.floor(Math.log10(raw));return +([1,2,2.5,5,10].map(k=>k*mag).find(v=>v>=raw*0.999)).toPrecision(6);}
+function autoMajor(span){if(!(span>0))return 1;const fits=c=>{const n=span/c;return Math.abs(n-Math.round(n))<1e-6;};const base=niceStep(span);if(fits(base))return base;
+ for(const c of [base/2,base/2.5,base/4,base/5,base/10,base/20].map(c=>+c.toPrecision(6)))if(fits(c)&&span/c<=20)return c;return base;}
 function fmtNum(v,fmt){if(Math.abs(v)<1e-12)v=0;const m=/^0(?:\.(0+))?$/.exec(fmt||'');const s=m?v.toFixed(m[1]?m[1].length:0):String(+v.toPrecision(10));return s.replace('-','−');}
 function fit(x,y){const n=x.length;if(n<2)return null;const mx=x.reduce((a,b)=>a+b,0)/n,my=y.reduce((a,b)=>a+b,0)/n;let sxx=0,sxy=0;for(let i=0;i<n;i++){sxx+=(x[i]-mx)**2;sxy+=(x[i]-mx)*(y[i]-my);}const a=sxy/sxx;return {a,b:my-a*mx};}
 function dashArr(d,w){const u=Math.max(d==='sysdot'||d==='dot'?2:1,w);return d==='dash'||d==='sysdash'?[4*u,3*u]:d==='sysdot'||d==='dot'?[u,u]:d==='dashdot'?[4*u,2*u,u,2*u]:[];}
@@ -35,7 +40,8 @@ function draw(g,ch,W,H){g.fillStyle='#fff';g.fillRect(0,0,W,H);
  g.lineWidth=1;g.font=`12px ${FONT}`;
  // gridlines + tick labels (Excel counts ticks from the axis minimum)
  for(let k=0;k<=200;k++){const v=xa.min+k*xa.major;if(v>xa.max+xa.major*1e-6)break;const x=Math.round(X(v))+.5;g.strokeStyle='#D9D9D9';g.beginPath();g.moveTo(x,PT);g.lineTo(x,PT+ph);g.stroke();g.fillStyle=GRAY;g.textAlign='center';g.fillText(fmtNum(v,xa.fmt),x,PT+ph+16);}
- for(let k=0;k<=200;k++){const v=ya.min+k*ya.major;if(v>ya.max+ya.major*1e-6)break;const y=Math.round(Y(v))+.5;g.strokeStyle='#D9D9D9';g.beginPath();g.moveTo(PL,y);g.lineTo(PL+pw,y);g.stroke();g.fillStyle=GRAY;g.textAlign='right';g.font=`12px ${FONT}`;g.fillText(fmtNum(v,ya.fmt),PL-6,y+4);}
+ const y0t=ch._moving?Math.ceil(ya.min/ya.major-1e-9)*ya.major:ya.min;   // while being dragged the ticks stay on the data; at rest Excel counts from the minimum
+ for(let k=0;k<=200;k++){const v=y0t+k*ya.major;if(v>ya.max+ya.major*1e-6)break;const y=Math.round(Y(v))+.5;g.strokeStyle='#D9D9D9';g.beginPath();g.moveTo(PL,y);g.lineTo(PL+pw,y);g.stroke();g.fillStyle=GRAY;g.textAlign='right';g.font=`12px ${FONT}`;g.fillText(fmtNum(v,ya.fmt),PL-6,y+4);}
  // axis lines cross at zero (or at the nearer end when zero is outside the range)
  const cz=(a)=>Math.min(Math.max(0,a.min),a.max);g.strokeStyle='#BFBFBF';g.beginPath();const y0=Math.round(Y(cz(ya)))+.5,x0=Math.round(X(cz(xa)))+.5;g.moveTo(PL,y0);g.lineTo(PL+pw,y0);g.moveTo(x0,PT);g.lineTo(x0,PT+ph);g.stroke();
  g.fillStyle=GRAY;rdraw(g,xa.title||'',PL+pw/2,H-12,13,'center');g.save();g.translate(16,PT+ph/2);g.rotate(-Math.PI/2);rdraw(g,ya.title||'',0,0,13,'center');g.restore();
@@ -62,7 +68,7 @@ function draw(g,ch,W,H){g.fillStyle='#fff';g.fillRect(0,0,W,H);
   const rowH=18,x0=lg.x*W,y1=lg.y*H;let tw=0;entries.forEach((e,i)=>{const y=y1+8+i*rowH+rowH/2;if(e.line){const lw=(e.width||28575)/12700*1.333;g.strokeStyle=e.color;g.lineWidth=lw;g.lineCap='butt';g.setLineDash(dashArr(e.dash,lw));g.beginPath();g.moveTo(x0+4,y);g.lineTo(x0+28,y);g.stroke();g.setLineDash([]);}
    else if(e.marker)marker(g,e.marker,x0+16,y,e.msize||7,e.color);g.fillStyle=GRAY;tw=Math.max(tw,rdraw(g,e.name,x0+34,y+4.5,13,'left'));});
   box={x:x0,y:y1,w:Math.max(lg.w*W,tw+40),h:Math.max(lg.h*H,entries.length*rowH+12)};}
- return {legend:box};}
+ return {legend:box,plot:{PL,PT,pw,ph,xa,ya}};}
 
 /* ---------- copy helpers ---------- */
 async function copyHTML(htmlStr,text){try{if(navigator.clipboard&&window.ClipboardItem){await navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([htmlStr],{type:'text/html'}),'text/plain':new Blob([text],{type:'text/plain'})})]);return true;}}catch(_){}
@@ -102,7 +108,11 @@ function autoPlace(it){const ch=it.chart.ch;if(!ch.legend)return;const {W,H}=cha
    const cx=bx+lw/2,cy=by+lh/2,line=Math.abs(f.a*((cx-PL)/pw*(xa.max-xa.min)+xa.min)+f.b-((PT+ph-cy)/ph*(ya.max-ya.min)+ya.min))/(ya.max-ya.min)*ph;sc+=line/60+Math.hypot(cx-ax,cy-ay)/400;
    if(!bb||sc<bb.sc)bb={sc,bx,by};}
   boxes.push([bb.bx,bb.by,lw,lh]);L.x=+((bb.bx-(ax+4))/W).toFixed(4);L.y=+((bb.by-(ay-lines.length*16.25-4))/H).toFixed(4);});}
-function applyOverrides(tab,o){if(!o||!o.report)return;let k=0;for(const it of o.report)if(it.type==='fig'){const ov=(OV[tab]||{})[k++];if(!it.chart.ch.legend)continue;autoPlace(it);if(ov)Object.assign(it.chart.ch.legend,ov);}}
+// user changes per figure: OV[tab][k] = {x:{min,max,major}, y:{…}, legend:{x,y}}; axes first, then automatic legend/label placement, then a dragged legend
+function applyOverrides(tab,o){if(!o||!o.report)return;let k=0;for(const it of o.report)if(it.type==='fig'){const ov=(OV[tab]||{})[k++]||{};const ch=it.chart.ch;
+ for(const ax of ['x','y'])if(ov[ax]){const m=ov[ax].major>0?ov[ax].major:autoMajor(ov[ax].max-ov[ax].min);Object.assign(ch[ax],{min:ov[ax].min,max:ov[ax].max,major:m,fmt:fmtOf(m)});}
+ if(!ch.legend)continue;autoPlace(it);if(ov.legend)Object.assign(ch.legend,ov.legend);}}
+const ovOf=(tab,k)=>((OV[tab]=OV[tab]||{})[k]=OV[tab][k]||{});
 let toast=null;
 function say(el,msg){el.textContent=msg;clearTimeout(el._t);el._t=setTimeout(()=>{el.textContent='';},2600);}
 function save(name,blob){const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);}
@@ -111,21 +121,40 @@ function render(box,tab,o,rerender){box.innerHTML='';if(!o||!o.report){box.inner
  let fi=0;for(const it of o.report){const card=document.createElement('div');card.className='rep-item';
   if(it.type==='table'){card.innerHTML=`<div class="rep-tbl">${tableHTML(it,false)}</div><div class="rep-act"><button class="btn small" type="button">表をコピー（Wordに貼り付け）</button><span class="rep-msg" role="status"></span></div>`;
    card.querySelector('button').addEventListener('click',async()=>{const ok=await copyHTML(tableHTML(it,true),tableTSV(it));say(card.querySelector('.rep-msg'),ok?'コピーしました。Wordで貼り付けてください。':'この環境ではコピーできませんでした。');});}
-  else{const k=fi++;const {W,H}=chartSize(it.sheet,it.chart);card.innerHTML=`<div class="rep-fig"><canvas aria-label="${esc(plain(it.caption))}"></canvas></div><p class="cap">${html(it.caption)}</p><div class="rep-act"><button class="btn small" type="button" data-a="png">PNGで保存</button><button class="btn small" type="button" data-a="copy">画像をコピー</button><button class="btn small" type="button" data-a="reset" hidden>凡例を元の位置に</button><span class="rep-msg" role="status"></span></div>`;
-   const cv=card.querySelector('canvas'),msg=card.querySelector('.rep-msg'),resetBtn=card.querySelector('[data-a=reset]');
-   if((OV[tab]||{})[k])resetBtn.hidden=false;
+  else{const k=fi++;const {W,H}=chartSize(it.sheet,it.chart);const ch=it.chart.ch;const ov=(OV[tab]||{})[k]||{};
+   const axRow=(ax,lab)=>`<div class="ax-row"><span class="ax-lab">${lab}</span><label>最小<input type="number" step="any" data-ax="${ax}" data-f="min" value="${ch[ax].min}"></label><label>最大<input type="number" step="any" data-ax="${ax}" data-f="max" value="${ch[ax].max}"></label><label>間隔<input type="number" step="any" data-ax="${ax}" data-f="major" value="${ov[ax]&&ov[ax].major>0?ch[ax].major:''}" placeholder="自動 (${ch[ax].major})"></label><button class="btn icon" type="button" data-auto="${ax}" ${ov[ax]?'':'disabled'}>${ov[ax]?'自動に戻す':'自動'}</button></div>`;
+   card.innerHTML=`<div class="rep-fig"><canvas aria-label="${esc(plain(it.caption))}"></canvas><span class="readout" hidden></span></div><p class="cap">${html(it.caption)}</p>
+    <div class="rep-act"><button class="btn small" type="button" data-a="png">PNGで保存</button><button class="btn small" type="button" data-a="copy">画像をコピー</button><button class="btn small" type="button" data-a="reset" ${Object.keys(ov).length?'':'hidden'}>すべて自動に戻す</button><span class="rep-msg" role="status"></span></div>
+    <details class="rep-ax"${ov.x||ov.y?' open':''}><summary>軸の範囲（${ov.x||ov.y?'手動で変更中':'自動：データに合わせる'}）</summary>${axRow('x','横軸')}${axRow('y','縦軸')}</details>`;
+   const cv=card.querySelector('canvas'),msg=card.querySelector('.rep-msg'),ro=card.querySelector('.readout');
    const paint=()=>{const cw=cv.parentElement.clientWidth||W;const k2=cw<W*0.8?Math.max(0.85,Math.min(1,cw*1.3/W)):1;const lw=W*k2,lh=H*k2;const dpr=window.devicePixelRatio||1;const sc=cw/lw*dpr;
-    cv.width=Math.round(lw*sc);cv.height=Math.round(lh*sc);const g=cv.getContext('2d');g.setTransform(sc,0,0,sc,0,0);const r=draw(g,it.chart.ch,lw,lh);cv._box=r.legend;cv._L=[lw,lh];};
+    cv.width=Math.round(lw*sc);cv.height=Math.round(lh*sc);const g=cv.getContext('2d');g.setTransform(sc,0,0,sc,0,0);const r=draw(g,ch,lw,lh);cv._box=r.legend;cv._plot=r.plot;cv._L=[lw,lh];};
    requestAnimationFrame(paint);cv._paint=paint;
-   // legend drag
-   let drag=null;const pos=e=>{const r=cv.getBoundingClientRect();return [(e.clientX-r.left)/r.width*cv._L[0],(e.clientY-r.top)/r.height*cv._L[1]];};
+   const pos=e=>{const r=cv.getBoundingClientRect();return [(e.clientX-r.left)/r.width*cv._L[0],(e.clientY-r.top)/r.height*cv._L[1]];};
    const onBox=p=>cv._box&&p[0]>=cv._box.x-4&&p[0]<=cv._box.x+cv._box.w+4&&p[1]>=cv._box.y-4&&p[1]<=cv._box.y+cv._box.h+4;
+   const inPlot=p=>{const q=cv._plot;return q&&p[0]>=q.PL&&p[0]<=q.PL+q.pw&&p[1]>=q.PT&&p[1]<=q.PT+q.ph;};
+   // readout of the pointer position (touch: shown on tap, fades out after ~3 s)
+   let roT=0;const showRO=p=>{clearTimeout(roT);ro.classList.remove('fade');if(!inPlot(p)){ro.hidden=true;return;}const q=cv._plot;const x=q.xa.min+(p[0]-q.PL)/q.pw*(q.xa.max-q.xa.min),y=q.ya.min+(q.PT+q.ph-p[1])/q.ph*(q.ya.max-q.ya.min);
+    ro.hidden=false;ro.textContent=`x = ${x.toFixed(decOf(q.xa.major)+1)},  y = ${y.toFixed(decOf(q.ya.major)+2)}`;};
+   const fadeRO=()=>{clearTimeout(roT);if(ro.hidden)return;roT=setTimeout(()=>{ro.classList.add('fade');roT=setTimeout(()=>{ro.hidden=true;ro.classList.remove('fade');},600);},3000);};
+   // drag: legend → move it (mouse & touch); plot area → move the y range up/down (mouse), snapping to a gridline on release
+   let drag=null,ypan=null;
    cv.addEventListener('touchstart',e=>{if(e.touches.length===1&&onBox(pos(e.touches[0])))e.preventDefault();},{passive:false});
-   cv.addEventListener('pointerdown',e=>{const p=pos(e);if(!onBox(p))return;drag={dx:p[0]-cv._box.x,dy:p[1]-cv._box.y};cv.setPointerCapture(e.pointerId);});
-   cv.addEventListener('pointermove',e=>{const p=pos(e);if(!drag){cv.style.cursor=onBox(p)?'move':'default';return;}const [lw,lh]=cv._L,lg=it.chart.ch.legend;
-    const x=Math.min(Math.max(0,(p[0]-drag.dx)/lw),1-Math.min(lg.w,0.95)),y=Math.min(Math.max(0,(p[1]-drag.dy)/lh),1-Math.min(lg.h,0.95));lg.x=+x.toFixed(4);lg.y=+y.toFixed(4);(OV[tab]=OV[tab]||{})[k]={x:lg.x,y:lg.y};resetBtn.hidden=false;paint();});
-   const end=()=>{drag=null;};cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
-   resetBtn.addEventListener('click',()=>{if(OV[tab])delete OV[tab][k];rerender();});
+   cv.addEventListener('pointerdown',e=>{const p=pos(e);if(onBox(p)){drag={dx:p[0]-cv._box.x,dy:p[1]-cv._box.y};cv.setPointerCapture(e.pointerId);return;}
+    if(e.pointerType==='mouse'&&inPlot(p)){ypan={y:p[1],min:ch.y.min,max:ch.y.max};ch._moving=true;cv.setPointerCapture(e.pointerId);}else showRO(p);});
+   cv.addEventListener('pointermove',e=>{const p=pos(e);
+    if(drag){const [lw,lh]=cv._L,lg=ch.legend;const x=Math.min(Math.max(0,(p[0]-drag.dx)/lw),1-Math.min(lg.w,0.95)),y=Math.min(Math.max(0,(p[1]-drag.dy)/lh),1-Math.min(lg.h,0.95));lg.x=+x.toFixed(4);lg.y=+y.toFixed(4);ovOf(tab,k).legend={x:lg.x,y:lg.y};paint();return;}
+    if(ypan){const s=(p[1]-ypan.y)/cv._plot.ph*(ypan.max-ypan.min);ch.y.min=ypan.min+s;ch.y.max=ypan.max+s;paint();showRO(p);return;}
+    if(e.pointerType==='mouse'){cv.style.cursor=onBox(p)?'move':inPlot(p)?'ns-resize':'default';showRO(p);}});
+   const end=e=>{if(drag){drag=null;rerender();return;}
+    if(ypan){const span=ypan.max-ypan.min,m=ch.y.major,mn=+(Math.round(ch.y.min/m)*m).toFixed(10);ch._moving=false;ypan=null;const o2=ovOf(tab,k);o2.y={min:mn,max:+(mn+span).toFixed(10),major:(o2.y&&o2.y.major)||0};rerender();return;}
+    if(e.pointerType!=='mouse')fadeRO();};
+   cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);cv.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'&&!ypan)ro.hidden=true;});
+   // axis inputs
+   card.querySelectorAll('.rep-ax input').forEach(inp=>inp.addEventListener('change',()=>{const ax=inp.dataset.ax;const get=f=>parseFloat(card.querySelector(`[data-ax="${ax}"][data-f="${f}"]`).value);
+    const mn=get('min'),mx=get('max'),mj=get('major');if(!(mx>mn)){say(msg,'最大は最小より大きくしてください。');return;}ovOf(tab,k)[ax]={min:mn,max:mx,major:mj>0&&(mx-mn)/mj<=60?mj:0};rerender();}));
+   card.querySelectorAll('[data-auto]').forEach(b=>b.addEventListener('click',()=>{const o2=ovOf(tab,k);delete o2[b.dataset.auto];rerender();}));
+   card.querySelector('[data-a=reset]').addEventListener('click',()=>{if(OV[tab])delete OV[tab][k];rerender();});
    card.querySelector('[data-a=png]').addEventListener('click',()=>{figCanvas(it,3).toBlob(b=>{save(plain(it.caption).split(/\s|　/)[0]+'.png',b);say(msg,'PNGを保存しました。');},'image/png');});
    card.querySelector('[data-a=copy]').addEventListener('click',async()=>{try{const p=new Promise(res=>figCanvas(it,3).toBlob(res,'image/png'));await navigator.clipboard.write([new ClipboardItem({'image/png':p})]);say(msg,'コピーしました。Wordで貼り付けてください。');}catch(_){say(msg,'この環境では画像のコピーができません。PNGで保存してください。');}});}
   box.appendChild(card);}}

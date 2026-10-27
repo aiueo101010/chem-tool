@@ -26,6 +26,17 @@ function parseTime(s){s=String(s??'').trim().replace(/\s+/g,'');if(!s)return NaN
 function btbColor(pH){const f=1/(1+10**(7.1-pH));const st=[[0,[214,170,0]],[0.5,[56,150,72]],[1,[33,64,160]]];let a=st[0],b=st[2];if(f<=0.5){a=st[0];b=st[1];}else{a=st[1];b=st[2];}const t=(f-a[0])/(b[0]-a[0]);
  return a[1].map((v,i)=>Math.round(v+(b[1][i]-v)*t).toString(16).padStart(2,'0')).join('').toUpperCase();}
 function niceAxis(lo,hi,step){return {min:+(Math.floor(lo/step+1e-9)*step).toFixed(6),max:+(Math.ceil(hi/step-1e-9)*step).toFixed(6),major:step};}
+/* ---------- automatic axes (same rules as the spectrum graph maker) ----------
+   tick step: the usual round step (~6 ticks); if it does not land on the end of the range, the largest finer round step that does.
+   lineAxis: spectra — the x range is exactly the data range.  valAxis: round limits around the data (pad = share of the span kept free). */
+function niceStep(span,n=6){if(!(span>0))return 1;const raw=span/n,mag=10**Math.floor(Math.log10(raw));return +([1,2,2.5,5,10].map(k=>k*mag).find(v=>v>=raw*0.999)).toPrecision(6);}
+function autoMajor(span){if(!(span>0))return 1;const fits=c=>{const n=span/c;return Math.abs(n-Math.round(n))<1e-6;};const base=niceStep(span);if(fits(base))return base;
+ for(const c of [base/2,base/2.5,base/4,base/5,base/10,base/20].map(c=>+c.toPrecision(6)))if(fits(c)&&span/c<=20)return c;return base;}
+const decOf=v=>{const s=String(+(+v).toPrecision(8));const i=s.indexOf('.');return i<0?0:s.length-i-1;};
+const fmtOf=m=>{const d=Math.min(6,decOf(m));return d?'0.'+'0'.repeat(d):'0';};
+function lineAxis(lo,hi){const major=autoMajor(hi-lo);return {min:lo,max:hi,major,fmt:fmtOf(major)};}
+function valAxis(lo,hi,pad=0){const s=(hi-lo)||Math.abs(hi)||1;if(lo!==0)lo-=pad*s;if(hi!==0)hi+=pad*s;   // an exact 0 (e.g. the origin of a calibration line) stays on the axis
+ const m=niceStep(hi-lo);const min=+(Math.floor(lo/m+1e-9)*m).toFixed(10),max=+(Math.ceil(hi/m-1e-9)*m).toFixed(10);const major=autoMajor(max-min);return {min,max,major,fmt:fmtOf(major)};}
 /* ---------- what goes on the report sheet, in order (used for the on-screen preview / copy / PNG) ---------- */
 let REP=[];
 /* ---------- report-style table (three-line, 游明朝, centred) ---------- */
@@ -80,25 +91,25 @@ function colorimetry(p){REP=[];
  if(specInfo.length){
   const ser=specInfo.map((x,k0)=>{const k=x.s.label.includes('ていない')?1:0;return {name:x.s.label,x:x.d.map(q=>q[0]),y:x.d.map(q=>q[1]),xRef:aref('計算',2,x.c,1+x.d.length,x.c),yRef:aref('計算',2,x.c+1,1+x.d.length,x.c+1),line:true,color:k?OF.orange:OF.blue,dash:k?'dash':'solid',marker:'none',
    labels:x.idx>=0?[{idx:x.idx,text:`${Math.round(x.pk.w)} nm , ${x.pk.a.toFixed(3)}`,x:k?0.03:-0.16,y:k?-0.16:-0.06}]:[]};});
-  const allx=specInfo.flatMap(x=>x.d.map(q=>q[0])),ally=specInfo.flatMap(x=>x.d.map(q=>q[1]));const xa=niceAxis(Math.min(...allx),Math.max(...allx),100),ya=niceAxis(Math.min(0,...ally),Math.max(...ally)*1.1,0.1);if(ya.min>-0.1&&Math.min(...ally)<0)ya.min=-0.1;
-  rep.chart({series:ser,x:{title:'<i>λ</i> / nm',...xa},y:{title:'<i>A</i>',...ya,fmt:'0.0'},legend:{x:0.56,y:0.05,w:0.42,h:0.16}},r,0,r+figH,figW);r+=figH;
+  const allx=specInfo.flatMap(x=>x.d.map(q=>q[0])),ally=specInfo.flatMap(x=>x.d.map(q=>q[1]));const xa=lineAxis(Math.min(...allx),Math.max(...allx)),ya=valAxis(Math.min(...ally),Math.max(...ally));
+  rep.chart({series:ser,x:{title:'<i>λ</i> / nm',...xa},y:{title:'<i>A</i>',...ya},legend:{x:0.56,y:0.05,w:0.42,h:0.16}},r,0,r+figH,figW);r+=figH;
   caption(rep,r,0,'図1　発色させた比色用標準溶液と発色させていない硫酸銅溶液の吸収スペクトル',figW);r+=2;
   r=table(rep,r,0,'表2　各溶液の吸収極大波長, 極大での吸光度とモル吸光係数',['溶液','<i>λ</i>_{max} / nm','<i>A</i>',`<i>C</i> / mol L^{${M}1}`,`<i>ε</i> / L mol^{${M}1} cm^{${M}1}`],
    specInfo.map(x=>[x.s.label.includes('ていない')?'無発色（硫酸銅）':'発色（テトラアンミン銅(II)）',x.pk?x.pk.w.toFixed(1):'—',x.pk?x.pk.a.toFixed(3):'—',sci(Cs),x.pk?(x.pk.a/(Cs*p.l)).toFixed(1):'—']),null,[2,1,1,1,1]);}
  r=table(rep,r,0,`表3　各溶液の Cu^{2+}濃度と ${p.wl} nm における吸光度`,['No.','溶液の種類','<i>V</i> / mL',`<i>C</i> / 10^{${M}3} mol L^{${M}1}`,'<i>A</i>'],
   [...rows.map((x,i)=>[String(x.no),i===0?'対照液':'比色用標準溶液',x.V.toFixed(2),sig(x.C*1000,3).replace(/^0$/,'0.00'),x.A.toFixed(3)]),[String(N+1),'濃度未知試料溶液',p.vunk.toFixed(2),sig(Cu*1000,3)+'*',p.Aunk.toFixed(3)]],'* 検量線（図2）から求めた値');
- const allC=rows.map(x=>x.C*1000).concat([Cu*1000]);const xa2={min:0,max:Math.ceil(Math.max(...allC)/2+0.01)*2,major:2};const ya2={min:Math.min(fall.b,0)<0?-0.1:0,max:Math.ceil(Math.max(...rows.map(x=>x.A),p.Aunk)*10)/10+0.1,major:0.1};
+ const allC=rows.map(x=>x.C*1000).concat([Cu*1000]);const allA=rows.map(x=>x.A).concat([p.Aunk,fall.b]);const xa2=valAxis(Math.min(0,...allC),Math.max(...allC),0.03);const ya2=valAxis(Math.min(0,...allA),Math.max(...allA),0.03);
  const eq=(f)=>`<i>A</i> = ${sig(f.a,3)} L mol^{${M}1} × <i>C</i> ${f.b<0?M:'+'} ${Math.abs(f.b).toFixed(4)}`;
  rep.chart({series:[{name:`比色用標準溶液・対照液（No.1-${N}）`,x:rows.map(x=>x.C*1000),y:rows.map(x=>x.A),xRef:aref('計算',R0+1,2,R0+N,2),yRef:aref('計算',R0+1,3,R0+N,3),marker:'circle',color:OF.blue,trend:{name:'近似直線',color:OF.blue,dash:'sysdot',label:{text:eq(fall),x:0.02,y:-0.04}}},
   {name:`濃度未知試料溶液（No.${N+1}）`,x:[Cu*1000],y:[p.Aunk],xRef:aref('計算',ru,2,ru,2),yRef:aref('計算',ru,3,ru,3),marker:'circle',color:OF.orange}],
-  x:{title:`<i>C</i> / 10^{${M}3} mol L^{${M}1}`,...xa2},y:{title:'<i>A</i>',...ya2,fmt:'0.0'},legend:{x:0.1,y:0.04,w:0.48,h:0.22}},r,0,r+figH,figW);r+=figH;
+  x:{title:`<i>C</i> / 10^{${M}3} mol L^{${M}1}`,...xa2},y:{title:'<i>A</i>',...ya2},legend:{x:0.1,y:0.04,w:0.48,h:0.22}},r,0,r+figH,figW);r+=figH;
  caption(rep,r,0,`図2　${p.wl} nm における吸光度と Cu^{2+}濃度の関係（検量線）`,figW);r+=2;
  if(ex.length&&fuse){const nm=ex.map(x=>x.no).join(', ');const un=used.map(x=>x.no);
   const uname=un.length>=3&&un.every((v,i)=>!i||v===un[i-1]+1)?`${un[0]}-${un[un.length-1]}`:un.join(', ');
   const ser=[{name:`比色用標準溶液・対照液（No.${uname}）`,x:used.map(x=>x.C*1000),y:used.map(x=>x.A),xRef:aref('計算',UB+1,2,UB+used.length,2),yRef:aref('計算',UB+1,3,UB+used.length,3),marker:'circle',color:OF.blue,trend:{name:`近似直線（No.${nm}を除く）`,color:OF.blue,dash:'sysdot',label:{text:eq(fuse),x:0.05,y:0.06}}},
    {name:`No.${nm}（予想値）`,x:ex.map(x=>fuse.a*x.C+fuse.b).map((_,i)=>ex[i].C*1000),y:ex.map(x=>fuse.a*x.C+fuse.b),xRef:aref('計算',EB+1,2,EB+ex.length,2),yRef:aref('計算',EB+1,4,EB+ex.length,4),marker:'circle',color:OF.red},
    {name:`No.${nm}（実測値）`,x:ex.map(x=>x.C*1000),y:ex.map(x=>x.A),xRef:aref('計算',EB+1,2,EB+ex.length,2),yRef:aref('計算',EB+1,3,EB+ex.length,3),marker:'circle',color:OF.gray}];
-  rep.chart({series:ser,x:{title:`<i>C</i> / 10^{${M}3} mol L^{${M}1}`,...xa2},y:{title:'<i>A</i>',min:Math.min(fuse.b,0)<0?-0.1:0,max:ya2.max,major:0.1,fmt:'0.0'},legend:{x:0.1,y:0.04,w:0.55,h:0.3}},r,0,r+figH,figW);r+=figH;
+  rep.chart({series:ser,x:{title:`<i>C</i> / 10^{${M}3} mol L^{${M}1}`,...xa2},y:{title:'<i>A</i>',...valAxis(Math.min(0,fuse.b,...ser.flatMap(s=>s.y)),Math.max(...ser.flatMap(s=>s.y)),0.03)},legend:{x:0.1,y:0.04,w:0.55,h:0.3}},r,0,r+figH,figW);r+=figH;
   caption(rep,r,0,`図3　No.${nm} を除いた検量線`,figW);r+=2;}
  return {sheets:[rep,cs],report:REP,res:{n,cstd,fall,fuse,Cu,orig,Cu2,orig2:Cu2*p.vflask/p.vunk,rows,used,ex,spec:specInfo.map(x=>({label:x.s.label,pk:x.pk,eps:x.pk?x.pk.a/(Cs*p.l):NaN}))}};}
 
@@ -141,15 +152,15 @@ function btb(p){REP=[];
  /* レポート用 */
  [10,10,20,10,20,10,10,10].forEach((w,i)=>rep.width(i,w));
  let r=0;rep.set(r,0,'分子の吸収スペクトルと溶液の平衡：レポート用の表と図',ST.sub);r+=2;const figW=8,figH=19;
- const allA=S.flatMap(s=>s.data.map(q=>q[1]));const ya=niceAxis(Math.min(0,...allA),Math.max(...allA)*1.08,0.1);const xa=niceAxis(grid[0],grid[grid.length-1],50);
+ const allA=S.flatMap(s=>s.data.map(q=>q[1]));const ya=valAxis(Math.min(...allA),Math.max(...allA));const xa=lineAxis(grid[0],grid[grid.length-1]);
  rep.chart({series:S.map((s,k)=>({name:'pH '+s.pH.toFixed(2),x:grid,y:grid.map(w=>maps[k].get(w)??null),xRef:aref('計算',G0,0,G1,0),yRef:aref('計算',G0,k+1,G1,k+1),line:true,width:22225,color:btbColor(s.pH),marker:'none'})),
-  x:{title:'<i>λ</i> / nm',...xa},y:{title:'<i>A</i>',...ya,fmt:'0.0'},legend:{x:0.74,y:0.04,w:0.22,h:0.065*N}},r,0,r+figH,figW);r+=figH;
+  x:{title:'<i>λ</i> / nm',...xa},y:{title:'<i>A</i>',...ya},legend:{x:0.74,y:0.04,w:0.22,h:0.065*N}},r,0,r+figH,figW);r+=figH;
  caption(rep,r,0,'図1　pHの異なるBTB溶液の吸収スペクトル',figW);r+=2;
  const hasColor=rowsA.some(x=>x.color);
  r=table(rep,r,0,`表1　各pHにおける${hasColor?'溶液の色と':''} ${p.w1} nm, ${p.w2} nm における吸光度`,['pH',...(hasColor?['溶液の色']:[]),`<i>A</i>（${p.w1} nm）`,`<i>A</i>（${p.w2} nm）`],rowsA.map(x=>[x.pH.toFixed(2),...(hasColor?[x.color||'']:[]),x.a1.toFixed(3),x.a2.toFixed(3)]));
  const eAll=[...eH,...eL].filter(v=>v!=null);const emax=Math.max(...eAll);const sc=emax>=1e4?1e4:1e3;const scE=Math.log10(sc);
  rep.chart({series:[{name:`<i>ε</i>_{HL}（pH ${S[0].pH.toFixed(2)}）`,x:grid,y:eH,xRef:aref('計算',2,EC,G1,EC),yRef:aref('計算',2,EC+1,G1,EC+1),line:true,color:OF.orange,marker:'none'},{name:`<i>ε</i>_{L}（pH ${S[N-1].pH.toFixed(2)}）`,x:grid,y:eL,xRef:aref('計算',2,EC,G1,EC),yRef:aref('計算',2,EC+2,G1,EC+2),line:true,dash:'dash',color:OF.blue,marker:'none'}],
-  x:{title:'<i>λ</i> / nm',...xa},y:{title:`<i>ε</i> / L mol^{${M}1} cm^{${M}1}`,...niceAxis(Math.min(...eAll)<-0.1*emax?Math.min(...eAll):0,emax*1.08,sc),fmt:'0'},legend:{x:0.1,y:0.04,w:0.32,h:0.14}},r,0,r+figH,figW);r+=figH;
+  x:{title:'<i>λ</i> / nm',...xa},y:{title:`<i>ε</i> / L mol^{${M}1} cm^{${M}1}`,...valAxis(Math.min(...eAll)<-0.1*emax?Math.min(...eAll):0,emax)},legend:{x:0.1,y:0.04,w:0.32,h:0.14}},r,0,r+figH,figW);r+=figH;
  caption(rep,r,0,'図2　HL と L^{−} のモル吸光係数の波長依存性',figW);r+=2;
  r=table(rep,r,0,`表2　${p.w1} nm と ${p.w2} nm における <i>A</i>_{1}, <i>A</i>_{2} とモル吸光係数`,['波長','<i>A</i>_{1}',`<i>ε</i>_{HL} / L mol^{${M}1} cm^{${M}1}`,'<i>A</i>_{2}',`<i>ε</i>_{L} / L mol^{${M}1} cm^{${M}1}`],
   [[`${p.w1} nm`,A1w1.toFixed(3),sci(A1w1/(C0*l)),A2w1.toFixed(3),sci(A2w1/(C0*l))],[`${p.w2} nm`,A1w2.toFixed(3),sci(A1w2/(C0*l)),A2w2.toFixed(3),sci(A2w2/(C0*l))]]);
@@ -161,7 +172,7 @@ function btb(p){REP=[];
  if(f2)ser.push({name:`${p.w2} nm`,x:u2.map(x=>x.pH),y:u2.map(x=>x.y2),xRef:aref('計算',2,FB+2,1+u2.length,FB+2),yRef:aref('計算',2,FB+3,1+u2.length,FB+3),marker:'triangle',color:OF.blue,trend:{name:`線形近似（${p.w2} nm）`,color:OF.blue,dash:'dash',label:{text:eqt(f2,p.w2),x:0.05,y:0.1}}});
  const pk1=f1?-f1.b/f1.a:NaN,pk2=f2?-f2.b/f2.a:NaN;const pks=[pk1,pk2].filter(isFinite);const pkm=pks.length?pks.reduce((a,b)=>a+b,0)/pks.length:NaN;
  if(ser.length){const xs=[...u1,...u2].map(x=>x.pH),ys=[...u1.map(x=>x.y1),...u2.map(x=>x.y2)];
-  rep.chart({series:ser,x:{title:'pH',...niceAxis(Math.min(...xs)-0.2,Math.max(...xs)+0.2,0.25),fmt:'0.00'},y:{title:LOG,...niceAxis(Math.min(...ys)-0.2,Math.max(...ys)+0.2,0.25),fmt:'0.00'},legend:{x:0.1,y:0.04,w:0.36,h:0.26}},r,0,r+figH,figW);r+=figH;
+  rep.chart({series:ser,x:{title:'pH',...valAxis(Math.min(...xs),Math.max(...xs),0.05)},y:{title:LOG,...valAxis(Math.min(...ys),Math.max(...ys),0.05)},legend:{x:0.1,y:0.04,w:0.36,h:0.26}},r,0,r+figH,figW);r+=figH;
   caption(rep,r,0,'図3　BTB の吸光度と pH の関係',figW);r+=2;}
  r=table(rep,r,0,'表4　近似直線の傾き・切片と求めた p<i>K</i>_{a}',['波長','傾き','切片','<i>R</i>^{2}','p<i>K</i>_{a}'],[[`${p.w1} nm`,f1?fx(f1.a,3):'—',f1?fx(f1.b,3):'—',f1?f1.r2.toFixed(3):'—',isFinite(pk1)?pk1.toFixed(2):'—'],[`${p.w2} nm`,f2?fx(f2.a,3):'—',f2?fx(f2.b,3):'—',f2?f2.r2.toFixed(3):'—',isFinite(pk2)?pk2.toFixed(2):'—']]);
  return {sheets:[rep,cs],report:REP,res:{C0,rowsA,f1,f2,pkm,u1,u2,peaks,iso,steps:stp,base,S,grid,maps}};}
@@ -195,7 +206,7 @@ function oscillation(p){REP=[];const n=p.n;
  const lab=(nm,f)=>`${nm}: <i>y</i> = ${fx(f.a,3)}<i>x</i> ${f.b<0?M:'+'} ${Math.abs(f.b).toFixed(2)}\n<i>R</i>^{2} = ${f.r2.toFixed(3)}`;
  rep.chart({series:[{name:'誘導期',x:xs,y:rows.map(x=>x.yi),xRef:aref('計算',e0,2,e1,2),yRef:aref('計算',e0,5+n,e1,5+n),marker:'square',color:OF.orange,trend:{name:'線形近似（誘導期）',color:OF.orange,dash:'sysdot',label:{text:lab('誘導期',fi),x:-0.25,y:0.1}}},
   {name:'振動期',x:xs,y:rows.map(x=>x.yo),xRef:aref('計算',e0,2,e1,2),yRef:aref('計算',e0,6+n,e1,6+n),marker:'circle',color:OF.blue,trend:{name:'線形近似（振動期）',color:OF.blue,dash:'dash',label:{text:lab('振動期',fo),x:0.05,y:-0.12}}}],
-  x:{title:`<i>T</i>^{${M}1} / 10^{${M}3} K^{${M}1}`,...niceAxis(Math.min(...xs)-0.015,Math.max(...xs)+0.015,0.02),fmt:'0.00'},y:{title:'ln (1/<i>P</i>)',...niceAxis(Math.min(...ys)-0.3,Math.max(...ys)+0.3,0.5),fmt:'0.0'},legend:{x:0.6,y:0.45,w:0.36,h:0.3}},r,0,r+figH,8);r+=figH;
+  x:{title:`<i>T</i>^{${M}1} / 10^{${M}3} K^{${M}1}`,...valAxis(Math.min(...xs),Math.max(...xs),0.05)},y:{title:'ln (1/<i>P</i>)',...valAxis(Math.min(...ys),Math.max(...ys),0.05)},legend:{x:0.6,y:0.45,w:0.36,h:0.3}},r,0,r+figH,8);r+=figH;
  caption(rep,r,0,'図1　誘導期および振動期のアーレニウスプロット',8);r+=2;
  r=table(rep,r,0,'表3　誘導期および振動期の活性化エネルギー',['','傾き / K','<i>R</i>^{2}',`<i>E</i>_{a} / kJ mol^{${M}1}`],[['誘導期',sci(fi.a*1000,4),fi.r2.toFixed(3),`${Ea(fi).toFixed(1)} ± ${dEa(fi).toFixed(1)}`],['振動期',sci(fo.a*1000,4),fo.r2.toFixed(3),`${Ea(fo).toFixed(1)} ± ${dEa(fo).toFixed(1)}`]],null,[1,1,2,3]);
  return {sheets:[rep,cs],report:REP,res:{rows,fi,fo,Ea:{ind:Ea(fi),osc:Ea(fo),dind:dEa(fi),dosc:dEa(fo)}}};}
