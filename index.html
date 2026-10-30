@@ -1,7 +1,7 @@
 <!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body><title>化学実験 第3実験室 図表メーカー</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+Mono:wght@400&display=swap">
 <style>
 /* layout: one working column — tabs per experiment, inputs left / live preview right, export bar at the bottom */
 :root{
@@ -11,14 +11,6 @@
  --f-body:"BIZ UDPGothic","Hiragino Sans","Yu Gothic UI","Meiryo",sans-serif;
  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
- --paper:#141B1C; --card:#1B2425; --ink:#E4ECEA; --muted:#9DB0AE; --line:#2E3B3C;
- --accent:#7FB8B0; --accent-ink:#0F1718; --soft:#22302F; --warn:#E3B66E; --warn-bg:#2E2618; --bad:#F08A7D;
- --c1:#7FB8B0; --c2:#F08A7D; --c3:#E8A65C; --c4:#86AEDD; --grid:#263233; color-scheme:dark}}
-:root[data-theme="dark"]{
- --paper:#141B1C; --card:#1B2425; --ink:#E4ECEA; --muted:#9DB0AE; --line:#2E3B3C;
- --accent:#7FB8B0; --accent-ink:#0F1718; --soft:#22302F; --warn:#E3B66E; --warn-bg:#2E2618; --bad:#F08A7D;
- --c1:#7FB8B0; --c2:#F08A7D; --c3:#E8A65C; --c4:#86AEDD; --grid:#263233; color-scheme:dark}
 body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.65}
 .wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 56px;display:grid;gap:22px}
 header{display:grid;gap:6px}
@@ -111,6 +103,94 @@ details.box[open]>summary{color:var(--ink)}
 .swatch{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:6px;border:1px solid rgba(0,0,0,.15)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 @media (prefers-reduced-motion:no-preference){.btn{transition:border-color .15s}}
+/* ===== shared look for both tools, following the Digital Agency Design System (デジタル庁デザインシステム, DADS) =====
+   tokens: key color Blue 900 #0017C1 (hover Blue 1000 #00118F, active Blue 1200 #000060), text Solid Gray 900 #1A1A1A,
+   input border Solid Gray 600 #666666, error #EC0000, success #197A4B, focus = 4px black outline + 2px yellow #FFD43D,
+   Noto Sans JP, body 16px / 1.7, radius 8px, buttons 48px (M) / 36px (S), inputs 48px.  Light theme only (as DADS). */
+:root{color-scheme:light;
+ --paper:#F2F2F2; --card:#FFFFFF; --ink:#1A1A1A; --muted:#4D4D4D; --line:#CCCCCC; --line-strong:#666666;
+ --accent:#0017C1; --accent-hover:#00118F; --accent-active:#000060; --accent-ink:#FFFFFF; --soft:#E8F1FE;
+ --warn:#AC3E00; --warn-bg:#FFEEE2; --warn-line:#FB5B01; --bad:#EC0000; --ok:#197A4B; --info-line:#7096F8;
+ --f-body:"Noto Sans JP",-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic UI","Meiryo",sans-serif;
+ --f-mono:"Noto Sans Mono","Noto Sans JP",ui-monospace,Menlo,Consolas,monospace;}
+html{background:var(--paper)}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.7;letter-spacing:.02em;margin:0;font-variant-numeric:tabular-nums}
+.wrap{gap:24px;padding-block:32px 64px}
+h1{font-size:clamp(24px,3vw,32px);line-height:1.5;font-weight:700;letter-spacing:.02em}
+h1 small{font-family:var(--f-mono);font-size:14px;font-weight:400;color:var(--muted);letter-spacing:.04em}
+h2{font-size:20px;line-height:1.5;font-weight:700}
+h2 .tag{font-family:var(--f-body);font-size:14px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--muted)}
+.lead{font-size:16px;color:var(--ink);max-width:52rem}
+a,.lead a{color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+a:hover{color:var(--accent-hover);text-decoration-thickness:3px}
+a:active{color:var(--accent-active)}
+/* focus (DADS): black 4px outline, 2px offset, yellow 2px ring */
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible,.drop:focus-visible,[tabindex]:focus-visible{outline:4px solid #000;outline-offset:2px;box-shadow:0 0 0 2px #FFD43D;border-radius:4px}
+/* panels */
+section.box,details.box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:24px;gap:16px}
+@media (max-width:600px){section.box,details.box{padding:16px}}
+.hint{font-size:14px;line-height:1.7;color:var(--muted)}
+label.f{font-size:14px;color:var(--ink);gap:4px}
+/* form controls */
+input[type=number],input[type=text],select{font-family:var(--f-body);font-size:16px;color:var(--ink);background:#fff;border:1px solid var(--line-strong);border-radius:8px;padding:8px 12px;min-height:48px;box-sizing:border-box}
+input[type=number]:hover,input[type=text]:hover,select:hover{border-color:var(--ink)}
+td input[type=number],td input[type=text],.ax-row input,.s input[type=text],.s select,.style-pick select,#look,#scheme{min-height:40px;padding:6px 10px}
+input[type=checkbox]{accent-color:var(--accent);width:20px;height:20px}
+input[type=color]{width:40px;height:40px;border:1px solid var(--line-strong);border-radius:8px}
+/* buttons (DADS: solid-fill / outline / text) */
+.btn{font-family:var(--f-body);font-size:16px;font-weight:700;line-height:1.3;min-height:48px;padding:8px 16px;border-radius:8px;border:1px solid var(--accent);background:#fff;color:var(--accent);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;text-decoration:none}
+.btn:hover{background:var(--soft);border-color:var(--accent-hover);color:var(--accent-hover);text-decoration:underline}
+.btn:active{background:#C5D7FB;color:var(--accent-active);border-color:var(--accent-active)}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);padding:8px 24px;font-size:16px}
+.btn.primary:hover{background:var(--accent-hover);border-color:var(--accent-hover);color:#fff}
+.btn.primary:active{background:var(--accent-active);border-color:var(--accent-active)}
+.btn.small{min-height:36px;padding:4px 12px;font-size:14px;font-weight:700}
+.btn.icon{min-height:36px;padding:4px 10px;font-size:14px;font-weight:700}
+.btn[disabled],.btn[disabled]:hover{background:#F2F2F2;color:#999;border-color:#CCCCCC;cursor:default;text-decoration:none;opacity:1}
+/* segmented choice */
+.seg{border:1px solid var(--accent);border-radius:8px}
+.seg button{font-family:var(--f-body);font-size:14px;font-weight:700;color:var(--accent);background:#fff;min-height:40px;padding:6px 12px;border-right:1px solid var(--accent)}
+.seg button:last-child{border-right:0}
+.seg button:hover{background:var(--soft)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff}
+/* tabs */
+nav{border-bottom:1px solid var(--line);gap:0}
+nav a{color:var(--ink);text-decoration:none;font-size:16px;font-weight:700;padding:12px 20px;border-bottom:4px solid transparent}
+nav a:hover{color:var(--accent);text-decoration:underline}
+nav a[aria-current="page"]{color:var(--accent);border-bottom-color:var(--accent)}
+/* tables in the UI */
+.tbl{border:1px solid var(--line);border-radius:8px}
+th,td{font-size:14px;padding:8px 10px;border-bottom:1px solid var(--line)}
+th{background:#F2F2F2;color:var(--ink);font-weight:700}
+/* file drop */
+.drop{border:2px dashed var(--line-strong);background:#fff;color:var(--ink);font-size:14px;border-radius:8px;padding:20px}
+.drop:hover{border-color:var(--accent);background:var(--soft)}
+.drop.over{border-color:var(--accent);background:var(--soft);color:var(--ink)}
+/* messages & banners */
+.msg{font-size:14px}
+.msg.err{color:var(--bad)} .msg.warn{color:var(--warn)}
+.caution{font-size:14px;line-height:1.7;color:var(--ink);background:var(--warn-bg);border:1px solid var(--warn-line);border-radius:8px;padding:12px 16px}
+.caution b{color:var(--warn)}
+.pcnote,.hint.how{font-size:14px;line-height:1.7;color:var(--ink);background:var(--soft);border:1px solid var(--info-line);border-radius:8px;padding:12px 16px}
+.pcnote b,.hint.how b{color:var(--accent)}
+.chip{font-size:14px;padding:2px 12px;background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn-line)}
+.chip.ok{background:var(--soft);color:var(--accent);border-color:var(--info-line)}
+/* result cards */
+.kv{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px}
+.kv span{font-size:14px;color:var(--muted)}
+.kv b{font-family:var(--f-body);font-size:18px;font-weight:700}
+/* bottom action bar */
+.bar{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 24px;box-shadow:0 -2px 8px rgba(0,0,0,.06)}
+.bar p{font-size:14px;color:var(--ink)}
+details>summary{font-size:16px;font-weight:700;color:var(--accent);cursor:pointer}
+details>summary:hover{text-decoration:underline}
+.readout{font-family:var(--f-mono)}
+.empty{color:var(--muted);font-size:14px}
+.wrap{max-width:1240px}
+nav{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin}
+nav a{white-space:nowrap;flex:none}
+@media (max-width:600px){nav a{padding:10px 14px;font-size:15px}.btn.primary{padding:8px 16px}}
+
 </style>
 
 <div class="wrap">
@@ -919,8 +999,6 @@ bInit(true);oInit(true);
 const restored=restore();
 window.addEventListener('hashchange',()=>show());
 document.querySelectorAll('nav a').forEach(el=>el.addEventListener('click',e=>{e.preventDefault();const t=el.dataset.tab;show(t);try{if(location.hash!=='#'+t)history.replaceState(null,'','#'+t);}catch(_){}}));
-matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>update());
-new MutationObserver(()=>update()).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 show(restored&&!location.hash?state.tab:undefined);
 })();
 

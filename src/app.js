@@ -142,7 +142,5 @@ bInit(true);oInit(true);
 const restored=restore();
 window.addEventListener('hashchange',()=>show());
 document.querySelectorAll('nav a').forEach(el=>el.addEventListener('click',e=>{e.preventDefault();const t=el.dataset.tab;show(t);try{if(location.hash!=='#'+t)history.replaceState(null,'','#'+t);}catch(_){}}));
-matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>update());
-new MutationObserver(()=>update()).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 show(restored&&!location.hash?state.tab:undefined);
 })();
